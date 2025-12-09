@@ -12,7 +12,7 @@ const mobileMenuOpen = ref(false);
 const page = usePage();
 
 const navLinks = [
-  { href: '/book', label: 'Book' },
+  { href: '/booking', label: 'Book' },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
 ];
