@@ -186,7 +186,7 @@ onUnmounted(() => {
                   />
                 </div>
                 <p 
-                  class="text-center mt-3 md:mt-4 font-semibold text-sm md:text-base transition-all duration-700"
+                  class="text-center mt-3 md:mt-4 pb-6 font-semibold text-sm md:text-base transition-all duration-700"
                   :class="[
                     i === selectedIndex 
                       ? 'text-destructive opacity-100 scale-110' 
@@ -195,7 +195,7 @@ onUnmounted(() => {
                       : 'text-neutral-600 opacity-0'
                   ]"
                 >
-                  {{ slide.alt }}
+                  
                 </p>
               </CarouselItem>
             </CarouselContent>

@@ -85,54 +85,55 @@ import SearchForm from '@/pages/clientSide/components/SearchForm.vue';
           </div>
         </div>
 
-        <!-- Hero Image with Card Effect -->
-        <div class="flex-1 relative">
-          <div class="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
+        <!-- Animated Car Hero -->
+        <div class="flex-1 relative h-[400px] lg:h-[500px] flex items-center justify-center overflow-hidden">
+          <!-- Animated Car with Pan Effect -->
+          <div class="car-pan-animation">
             <img 
-              src="/images/familyPicture.png" 
-              alt="Family Picture" 
-              class="w-full h-auto object-contain rounded-2xl"
+              src="/images/Innova.png" 
+              alt="Premium Car" 
+              class="w-full max-w-xl h-auto object-contain drop-shadow-2xl"
             />
-            
-            <!-- Floating Card - Price Badge -->
-            <div class="absolute top-8 right-8 bg-white rounded-2xl shadow-xl p-4 backdrop-blur-sm">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                  <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <div class="text-xs text-neutral-500 font-medium">Starting from</div>
-                  <div class="text-xl font-bold text-neutral-900">₱1,500<span class="text-sm font-normal text-neutral-500">/day</span></div>
-                </div>
+          </div>
+
+          <!-- Floating Card - Price Badge -->
+          <div class="absolute top-8 right-8 bg-white rounded-2xl shadow-xl p-4 backdrop-blur-sm z-10 animate-float">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs text-neutral-500 font-medium">Starting from</div>
+                <div class="text-xl font-bold text-neutral-900">₱1,500<span class="text-sm font-normal text-neutral-500">/day</span></div>
               </div>
             </div>
+          </div>
 
-            <!-- Floating Card - Rating Badge -->
-            <div class="absolute bottom-8 left-8 bg-white rounded-2xl shadow-xl p-4 backdrop-blur-sm">
-              <div class="flex items-center gap-3">
-                <div class="flex gap-0.5">
-                  <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                  </svg>
-                  <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                  </svg>
-                  <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                  </svg>
-                  <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                  </svg>
-                  <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                  </svg>
-                </div>
-                <div>
-                  <div class="text-lg font-bold text-neutral-900">4.9</div>
-                  <div class="text-xs text-neutral-500">2,450 reviews</div>
-                </div>
+          <!-- Floating Card - Rating Badge -->
+          <div class="absolute bottom-8 left-8 bg-white rounded-2xl shadow-xl p-4 backdrop-blur-sm z-10 animate-float-delayed">
+            <div class="flex items-center gap-3">
+              <div class="flex gap-0.5">
+                <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                </svg>
+                <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                </svg>
+                <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                </svg>
+                <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                </svg>
+                <svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="text-lg font-bold text-neutral-900">4.9</div>
+                <div class="text-xs text-neutral-500">2,450 reviews</div>
               </div>
             </div>
           </div>
@@ -140,6 +141,9 @@ import SearchForm from '@/pages/clientSide/components/SearchForm.vue';
           <!-- Decorative Elements -->
           <div class="absolute -top-4 -right-4 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl"></div>
           <div class="absolute -bottom-4 -left-4 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl"></div>
+          
+          <!-- Circular Background Glow -->
+          <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-full blur-3xl opacity-50"></div>
         </div>
       </div>
     </div>
@@ -175,4 +179,60 @@ import SearchForm from '@/pages/clientSide/components/SearchForm.vue';
 .delay-1000 {
   animation-delay: 1s;
 }
-</style>
+
+/* Car Pan Animation - Stay, then pan left */
+@keyframes pan-left {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  /* Stay in center for 3 seconds (30% of 10s) */
+  30% {
+    transform: translateX(0) translateY(0);
+  }
+  /* Pan to the left */
+  60% {
+    transform: translateX(-100%) translateY(0);
+  }
+  /* Reset instantly */
+  60.01% {
+    transform: translateX(100%) translateY(0);
+  }
+  /* Come back to center */
+  100% {
+    transform: translateX(0) translateY(0);
+  }
+}
+
+.car-pan-animation {
+  animation: pan-left 10s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Floating Badges */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes float-delayed {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 3s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+</style>  
