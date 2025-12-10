@@ -7,6 +7,7 @@ import AppHeader from '@/pages/clientSide/components/AppHeader.vue';
 import HeroSection from '@/pages/clientSide/components/HeroSection.vue';
 import VehiclesSection from '@/pages/clientSide/components/VehicleSection.vue';
 import InsuranceSection from '@/pages/clientSide/components/InsuranceSection.vue';
+import TestimonialSection from '@/pages/clientSide/components/TestimonialSection.vue';
 import AppFooter from '@/pages/clientSide/components/AppFooter.vue';
 
 withDefaults(
@@ -25,6 +26,7 @@ withDefaults(
     <HeroSection />
     <VehiclesSection />
     <InsuranceSection />
+    <TestimonialSection/>
     <AppFooter />
   </div>
 </template>

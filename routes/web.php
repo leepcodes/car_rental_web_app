@@ -14,6 +14,11 @@ Route::get('/booking', function () {
         'canRegister' => Features::enabled(Features::registration()),
     ]);
 })->name('booking');
+Route::get('/about', function () {
+    return Inertia::render('clientSide/About', [
+        'canRegister' => Features::enabled(Features::registration()),
+    ]);
+})->name('about');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
