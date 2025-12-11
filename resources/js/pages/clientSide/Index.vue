@@ -22,7 +22,7 @@ withDefaults(
   <Head title="Home" />
 
   <div class="min-h-screen bg-neutral-50">
-    <AppHeader :can-register="canRegister" />
+    <AppHeader :can-register="canRegister" :can-operator="canRegister"/>
     <HeroSection />
     <VehiclesSection />
     <InsuranceSection />

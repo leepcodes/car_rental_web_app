@@ -6,6 +6,7 @@ import { dashboard, login, register } from '@/routes';
 
 defineProps<{
   canRegister?: boolean;
+  canOperator?: boolean;
 }>();
 
 const mobileMenuOpen = ref(false);
@@ -51,8 +52,11 @@ const navLinks = [
             </Link>
           </template>
           <template v-else>
+            <Link v-if ="canOperator" :href="register()" class="px-4 py-2.5 text-sm text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors">
+                Apply as Operator
+              </Link>
             <Link
-              :href="login()"
+              :href="login()" 
               class="px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-100 rounded-full transition-colors"
             >
               Sign In
@@ -97,6 +101,9 @@ const navLinks = [
               </Link>
             </template>
             <template v-else>
+              <Link v-if ="canOperator" :href="register()" class="px-4 py-2.5 text-sm text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors">
+                Apply as Operator
+              </Link>
               <Link :href="login()" class="px-4 py-2.5 text-sm text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors">
                 Sign In
               </Link>
