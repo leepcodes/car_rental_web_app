@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\RegisterResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -20,7 +22,47 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register custom Login response
+        $this->app->instance(LoginResponse::class, new class implements LoginResponse {
+            public function toResponse($request)
+            {
+                $user = auth()->user();
+                
+                // Check if profile is NOT completed (only for client and operator)
+                if (!$user->profile_completed && in_array($user->user_type, ['client', 'operator'])) {
+                    return redirect()->route($user->user_type . '.profile.complete');
+                }
+                
+                // Redirect based on user type
+                switch ($user->user_type) {
+                    case 'client':
+                        return redirect()->route('booking');
+                    case 'operator':
+                        return redirect()->route('operator.dashboard');
+                    case 'admin':
+                        return redirect()->route('admin.dashboard');
+                    default:
+                        // This should never happen if user_type is properly set
+                        abort(403, 'Invalid user type');
+                }
+            }
+        });
+
+        // Register custom Register response
+        $this->app->instance(RegisterResponse::class, new class implements RegisterResponse {
+            public function toResponse($request)
+            {
+                $user = auth()->user();
+                
+                // Always redirect to profile completion after registration
+                if ($user->user_type) {
+                    return redirect()->route($user->user_type . '.profile.complete');
+                }
+                
+                // Fallback
+                return redirect()->route('profile.complete');
+            }
+        });
     }
 
     /**

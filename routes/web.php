@@ -23,5 +23,34 @@ Route::get('/about', function () {
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+// routes/web.php
+
+Route::middleware(['auth','role:client'])->group(function () {
+    
+    // Client profile completion
+    Route::get('/client/profile/complete', function () {
+        return Inertia::render('clientSide/clientsView/profileCompletion/profileCompletion');
+    })->name('client.profile.complete');
+
+    Route::get('/client/booking', function () {
+        return Inertia::render('clientSide/clientsView/Booking/Listing');
+    })->name('client.booking');
+    
+    Route::post('/client/profile/complete', [ClientProfileController::class, 'store'])
+        ->name('client.profile.complete.store');
+}); 
+Route::middleware(['auth','role:operator'])->group(function () {
+    // Operator profile completion
+    Route::get('/operator/profile/complete', function () {
+        return Inertia::render('clientSide/operatorsView/operatorsProfileCompletion/operatorsProfileCompletion');
+    })->name('operator.profile.complete');
+
+    Route::get('/operator/dashboard', function () {
+        return Inertia::render('clientSide/operatorsView/Dashboard');
+    })->name('operator.dashboard');
+    
+    Route::post('/operator/profile/complete', [OperatorProfileController::class, 'store'])
+        ->name('operator.profile.complete.store');
+});
 
 require __DIR__.'/settings.php';
