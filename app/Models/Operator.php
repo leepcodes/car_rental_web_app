@@ -29,7 +29,7 @@ class Operator extends Model
     /**
      * Get the user that owns the operator profile.
      */
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class, 'operators_id', 'id');
     }

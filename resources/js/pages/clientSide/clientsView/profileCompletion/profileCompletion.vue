@@ -1,7 +1,6 @@
-<!-- resources/js/Pages/client/ProfileComplete.vue -->
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import AppHeader from '../../components/AppHeader.vue';
 import AppFooter from '../../components/AppFooter.vue';
@@ -16,7 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Calendar, User, FileText, Upload, Info, CheckCircle2, Loader2, UserCheck, X } from 'lucide-vue-next';
 
-const form = useForm({
+const formData = ref({
   address: '',
   age: '' as string | number,
   gender: '',
@@ -24,15 +23,16 @@ const form = useForm({
   license_file: null as File | null,
 });
 
+const errors = ref<Record<string, string>>({});
+const processing = ref(false);
 const previewUrl = ref<string | null>(null);
 
 const handleFileUpload = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     const file = target.files[0];
-    form.license_file = file;
+    formData.value.license_file = file;
     
-    // Create preview
     const reader = new FileReader();
     reader.onload = (e) => {
       previewUrl.value = e.target?.result as string;
@@ -43,38 +43,70 @@ const handleFileUpload = (event: Event) => {
 
 const removeFile = () => {
   previewUrl.value = null;
-  form.license_file = null;
+  formData.value.license_file = null;
   const fileInput = document.getElementById('license-upload') as HTMLInputElement;
   if (fileInput) fileInput.value = '';
 };
 
 const submit = () => {
-  form.post(route('client.profile.complete.store'), {
+  errors.value = {};
+  
+  const data = new FormData();
+  data.append('address', formData.value.address);
+  data.append('age', formData.value.age.toString());
+  data.append('gender', formData.value.gender);
+  data.append('license_number', formData.value.license_number);
+  
+  if (formData.value.license_file) {
+    data.append('license_file', formData.value.license_file);
+  }
+  
+  processing.value = true;
+  
+  router.post('/client/profile/complete', data, {
     preserveScroll: true,
+    onError: (formErrors) => {
+      errors.value = formErrors;
+      processing.value = false;
+    },
+    onSuccess: () => {
+      processing.value = false;
+    },
+    onFinish: () => {
+      processing.value = false;
+    }
   });
 };
 </script>
 
 <template>
   <Head title="Complete Your Client Profile" />
-
   <AppHeader />
   
-  <div class="min-h-screen bg-white">
-    <main class="container max-w-3xl mx-auto px-4 py-8 md:py-12 mt-20">
-      <Card class="border-2">
+  <section class="relative min-h-screen px-6 lg:px-8 overflow-hidden bg-gradient-to-br from-neutral-500 via-neutral-800 to-neutral-900">
+    <!-- Decorative Elements -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+    </div>
+
+    <!-- Grid Pattern Overlay -->
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+    
+    <main class="relative container max-w-3xl mx-auto px-4 py-8 md:py-12 mt-20">
+      <Card class="border shadow-sm bg-white relative z-10">
         <CardHeader class="space-y-1 pb-6">
           <div class="flex items-center gap-3">
-            <div class="p-2 bg-primary/10 rounded-lg">
-              <UserCheck class="h-6 w-6 text-primary" />
+            <div class="p-2 bg-gray-100 rounded-lg">
+              <UserCheck class="h-6 w-6 text-gray-700" />
             </div>
             <div class="flex-1">
-              <CardTitle class="text-2xl">Complete Your Client Profile</CardTitle>
-              <CardDescription class="text-base">
+              <CardTitle class="text-2xl text-gray-900">Complete Your Client Profile</CardTitle>
+              <CardDescription class="text-base text-gray-600">
                 Just a few more details to get you started on your journey
               </CardDescription>
             </div>
-            <Badge variant="secondary" class="hidden sm:flex">Step 1 of 1</Badge>
+            <Badge variant="secondary" class="hidden sm:flex bg-gray-100 text-gray-700">Step 1 of 1</Badge>
           </div>
         </CardHeader>
 
@@ -82,51 +114,53 @@ const submit = () => {
           <form @submit.prevent="submit" class="space-y-6">
             <!-- Address -->
             <div class="space-y-2">
-              <Label for="address" class="flex items-center gap-2">
-                <MapPin class="h-4 w-4 text-muted-foreground" />
+              <Label for="address" class="flex items-center gap-2 text-gray-700">
+                <MapPin class="h-4 w-4 text-blue-600" />
                 Complete Address
               </Label>
               <Textarea
                 id="address"
-                v-model="form.address"
+                v-model="formData.address"
                 placeholder="Enter your complete address (Street, Barangay, City, Province)"
                 rows="3"
                 required
-                :class="form.errors.address ? 'border-destructive' : ''"
+                :class="errors.address ? 'border-red-500' : 'border-gray-300'"
+                class="resize-none bg-white text-gray-700"
               />
-              <p v-if="form.errors.address" class="text-sm text-destructive">
-                {{ form.errors.address }}
+              <p v-if="errors.address" class="text-sm text-red-600">
+                {{ errors.address }}
               </p>
             </div>
 
             <!-- Age -->
             <div class="space-y-2">
-              <Label for="age" class="flex items-center gap-2">
-                <Calendar class="h-4 w-4 text-muted-foreground" />
+              <Label for="age" class="flex items-center gap-2 text-gray-700">
+                <Calendar class="h-4 w-4 text-blue-600" />
                 Age
               </Label>
               <Input
                 id="age"
-                v-model.number="form.age"
+                v-model.number="formData.age"
                 type="number"
                 min="18"
                 max="100"
                 placeholder="Enter your age"
                 required
-                :class="form.errors.age ? 'border-destructive' : ''"
+                :class="errors.age ? 'border-red-500' : 'border-gray-300'"
+                class="text-gray-700 bg-white"
               />
-              <p v-if="form.errors.age" class="text-sm text-destructive">
-                {{ form.errors.age }}
+              <p v-if="errors.age" class="text-sm text-red-600">
+                {{ errors.age }}
               </p>
             </div>
 
             <!-- Gender -->
             <div class="space-y-2">
-              <Label class="flex items-center gap-2 mb-3">
-                <User class="h-4 w-4 text-muted-foreground" />
+              <Label class="flex items-center gap-2 mb-3 text-gray-700">
+                <User class="h-4 w-4 text-blue-600" />
                 Gender
               </Label>
-              <RadioGroup v-model="form.gender" class="grid grid-cols-3 gap-4" required>
+              <RadioGroup v-model="formData.gender" class="grid grid-cols-3 gap-4">
                 <div v-for="option in ['male', 'female', 'others']" :key="option">
                   <RadioGroupItem
                     :value="option"
@@ -135,40 +169,41 @@ const submit = () => {
                   />
                   <Label
                     :for="option"
-                    class="flex items-center justify-center rounded-md border-2 border-muted bg-transparent px-3 py-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary capitalize cursor-pointer transition-colors"
+                    class="flex items-center justify-center rounded-md border-2 border-gray-300 bg-white px-3 py-2 hover:bg-gray-50 hover:border-gray-400 peer-data-[state=checked]:border-blue-700 peer-data-[state=checked]:bg-gray-50 [&:has([data-state=checked])]:border-blue-700 capitalize cursor-pointer transition-colors text-gray-700"
                   >
                     {{ option }}
                   </Label>
                 </div>
               </RadioGroup>
-              <p v-if="form.errors.gender" class="text-sm text-destructive">
-                {{ form.errors.gender }}
+              <p v-if="errors.gender" class="text-sm text-red-600">
+                {{ errors.gender }}
               </p>
             </div>
 
             <!-- License Number -->
             <div class="space-y-2">
-              <Label for="license_number" class="flex items-center gap-2">
-                <FileText class="h-4 w-4 text-muted-foreground" />
+              <Label for="license_number" class="flex items-center gap-2 text-gray-700">
+                <FileText class="h-4 w-4 text-gray-500" />
                 Driver's License Number
               </Label>
               <Input
                 id="license_number"
-                v-model="form.license_number"
+                v-model="formData.license_number"
                 type="text"
                 placeholder="e.g., N01-12-345678"
                 required
-                :class="form.errors.license_number ? 'border-destructive' : ''"
+                :class="errors.license_number ? 'border-red-500' : 'border-gray-300'"
+                class="text-gray-700 bg-white"
               />
-              <p v-if="form.errors.license_number" class="text-sm text-destructive">
-                {{ form.errors.license_number }}
+              <p v-if="errors.license_number" class="text-sm text-red-600">
+                {{ errors.license_number }}
               </p>
             </div>
 
             <!-- License Upload -->
             <div class="space-y-2">
-              <Label class="flex items-center gap-2">
-                <Upload class="h-4 w-4 text-muted-foreground" />
+              <Label class="flex items-center gap-2 text-gray-700 font-medium">
+                <Upload class="h-4 w-4 text-blue-600" />
                 Upload Driver's License
               </Label>
               
@@ -179,70 +214,73 @@ const submit = () => {
                   @change="handleFileUpload"
                   class="hidden"
                   id="license-upload"
-                  required
                 />
                 
-                <label
+                  <label
                   v-if="!previewUrl"
                   for="license-upload"
                   :class="[
-                    'flex flex-col items-center justify-center w-full h-40 rounded-lg border-2 border-dashed cursor-pointer transition-colors hover:bg-accent',
-                    form.errors.license_file ? 'border-destructive' : 'border-muted-foreground/25'
+                    'flex flex-col items-center justify-center w-full h-40 rounded-lg border-2 border-dashed cursor-pointer transition-all hover:border-blue-400 hover:bg-blue-50/50',
+                    errors.license_file ? 'border-red-500 bg-red-50/50' : 'border-gray-300 bg-gray-50/50'
                   ]"
                 >
                   <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                    <Upload class="h-10 w-10 mb-3 text-muted-foreground" />
-                    <p class="mb-2 text-sm text-muted-foreground">
-                      <span class="font-semibold">Click to upload</span> or drag and drop
+                    <div class="p-3 bg-blue-100 rounded-full mb-3">
+                      <Upload class="h-8 w-8 text-blue-600" />
+                    </div>
+                    <p class="mb-2 text-sm text-gray-600">
+                      <span class="font-semibold text-blue-600">Click to upload</span> or drag and drop
                     </p>
-                    <p class="text-xs text-muted-foreground">JPG, PNG, or PDF (Max 2MB)</p>
+                    <p class="text-xs text-gray-500">JPG, PNG, or PDF (Max 2MB)</p>
                   </div>
                 </label>
 
-                <div v-else class="relative w-full h-48 rounded-lg border-2 border-muted overflow-hidden bg-muted/20">
+                <div v-else class="relative w-full h-52 rounded-lg border-2 border-blue-300 overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 shadow-sm">
                   <img 
-                    v-if="form.license_file?.type?.startsWith('image')"
+                    v-if="formData.license_file?.type?.startsWith('image')"
                     :src="previewUrl" 
                     alt="License preview" 
-                    class="w-full h-full object-contain"
+                    class="w-full h-full object-contain p-2"
                   />
                   <div v-else class="flex flex-col items-center justify-center h-full p-4">
-                    <FileText class="h-16 w-16 text-muted-foreground mb-2" />
-                    <span class="text-sm text-muted-foreground text-center break-all px-4">
-                      {{ form.license_file?.name }}
+                    <div class="p-4 bg-white rounded-full mb-3 shadow-md">
+                      <FileText class="h-12 w-12 text-blue-600" />
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 text-center break-all px-4">
+                      {{ formData.license_file?.name }}
                     </span>
                   </div>
                   <button
                     type="button"
                     @click="removeFile"
-                    class="absolute top-2 right-2 h-8 w-8 bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md flex items-center justify-center transition-colors"
+                    class="absolute top-3 right-3 h-9 w-9 bg-red-500 text-white hover:bg-red-600 rounded-lg flex items-center justify-center transition-colors shadow-md"
                   >
-                    <X class="h-4 w-4" />
+                    <X class="h-5 w-5" />
                   </button>
                 </div>
               </div>
-              <p v-if="form.errors.license_file" class="text-sm text-destructive">
-                {{ form.errors.license_file }}
+              <p v-if="errors.license_file" class="text-sm text-red-600 flex items-center gap-1">
+                {{ errors.license_file }}
               </p>
             </div>
 
             <!-- Submit button -->
             <button
               type="submit"
-              :disabled="form.processing"
-              class="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              :disabled="processing"
+              class="w-full h-11 bg-gray-900 text-white hover:bg-gray-800 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              <Loader2 v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 v-if="processing" class="mr-2 h-4 w-4 animate-spin" />
               <CheckCircle2 v-else class="mr-2 h-4 w-4" />
-              {{ form.processing ? 'Submitting...' : 'Complete Profile' }}
+              {{ processing ? 'Submitting...' : 'Complete Profile' }}
             </button>
 
             <!-- Info Alert -->
-            <Alert variant="default" class="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
-              <Info class="h-4 w-4 text-blue-600 dark:text-blue-500" />
-              <AlertDescription class="text-blue-900 dark:text-blue-100">
+            <Alert variant="default" class="border-blue-200 bg-blue-50">
+              <Info class="h-4 w-4 text-blue-600" />
+              <AlertDescription class="text-blue-900">
                 <strong class="font-semibold">Important Information</strong>
-                <p class="mt-1 text-sm text-blue-700 dark:text-blue-200">
+                <p class="mt-1 text-sm text-blue-800">
                   Please ensure all information is accurate. Your driver's license will be verified before you can start booking rides.
                 </p>
               </AlertDescription>
@@ -251,7 +289,7 @@ const submit = () => {
         </CardContent>
       </Card>
     </main>
-    
-    <AppFooter />
-  </div>
+  </section>
+  
+  <AppFooter />
 </template>

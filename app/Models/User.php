@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Illuminate\Database\Eloquent\Model;
 
 class User extends Authenticatable
 {
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'user_type',
+        'profile_completed'
     ];
 
     /**
@@ -55,7 +57,7 @@ class User extends Authenticatable
      /**
      * Get the client profile associated with the user.
      */
-    public function client(): HasOne
+    public function client()
     {
         return $this->hasOne(Client::class, 'clients_id', 'id');
     }
@@ -63,7 +65,7 @@ class User extends Authenticatable
     /**
      * Get the operator profile associated with the user.
      */
-    public function operator(): HasOne
+    public function operator()
     {
         return $this->hasOne(Operator::class, 'operators_id', 'id');
     }

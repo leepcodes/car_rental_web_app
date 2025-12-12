@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('license_number');
             $table->string('license_url');
             $table->string('status');
-            $table->boolean('is_profile_completed')->default(0);
             $table->string('verification');
             $table->timestamps();
         });

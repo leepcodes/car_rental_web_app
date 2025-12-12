@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->enum('user_type',['superadmin','client','operator'])->after('two_factor_confirmed_at')->nullable();
-            $table->boolean('profile_completed')->default(false)->after('user_type');
+            $table->boolean('')->default(false)->after('user_type');
 
         });
     }

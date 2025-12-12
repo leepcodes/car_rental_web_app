@@ -27,7 +27,7 @@ class Client extends Model
     /**
      * Get the user that owns the client profile.
      */
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class, 'clients_id', 'id');
     }
