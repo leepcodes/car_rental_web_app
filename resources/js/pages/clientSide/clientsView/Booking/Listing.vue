@@ -1,7 +1,7 @@
 // pages/booking.vue
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppHeader from '@/pages/clientSide/components/AppHeader.vue';
 import VehicleCard from '@/pages/clientSide/components/VehicleCard.vue';
 import SearchFilters from '@/pages/clientSide/components/SearchForm.vue';
@@ -185,7 +185,8 @@ const toggleFavorite = (id: number) => {
 const handleBook = (id: number) => {
   const vehicle = vehicles.value.find(v => v.id === id);
   console.log('Booking vehicle:', vehicle?.name);
-  // Navigate to booking details page or open modal
+  // Navigate to booking details page
+  router.visit(`/client/booking/${id}`);
 };
 
 const handleSearch = (query: string) => {

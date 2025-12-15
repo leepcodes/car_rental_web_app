@@ -41,6 +41,16 @@ Route::middleware(['auth','role:client'])->group(function () {
         Route::get('/client/booking', function () {
             return Inertia::render('clientSide/clientsView/Booking/Listing');
         })->name('client.booking');
+        
+        Route::get('/client/booking/form', function () {
+            return Inertia::render('clientSide/clientsView/Booking/Form');
+        })->name('client.booking.form');
+        
+        Route::get('/client/booking/{id}', function ($id) {
+            return Inertia::render('clientSide/clientsView/IndivList/IndivList', [
+                'vehicleId' => $id
+            ]);
+        })->name('client.booking.show');
     });
 }); 
 Route::middleware(['auth','role:operator'])->group(function () {
