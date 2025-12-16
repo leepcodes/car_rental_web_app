@@ -9,6 +9,7 @@ import VehiclesSection from '@/pages/clientSide/components/VehicleSection.vue';
 import InsuranceSection from '@/pages/clientSide/components/InsuranceSection.vue';
 import TestimonialSection from '@/pages/clientSide/components/TestimonialSection.vue';
 import AppFooter from '@/pages/clientSide/components/AppFooter.vue';
+import GlobalLayout from '@/layouts/GlobalLayout.vue';
 
 withDefaults(
   defineProps<{
@@ -22,11 +23,13 @@ withDefaults(
   <Head title="Home" />
 
   <div class="min-h-screen bg-neutral-50">
+  <GlobalLayout>
     <AppHeader :can-register="canRegister" :can-operator="canRegister"/>
     <HeroSection />
     <VehiclesSection />
     <InsuranceSection />
     <TestimonialSection/>
     <AppFooter />
+   </GlobalLayout>
   </div>
 </template>

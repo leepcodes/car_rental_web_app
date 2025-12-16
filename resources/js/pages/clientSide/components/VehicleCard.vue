@@ -40,7 +40,7 @@ const emit = defineEmits<{
 <template>
   <Card class="overflow-hidden hover:shadow-xl transition-shadow group">
     <!-- Image Section -->
-    <Link :href="`/client/booking/${vehicle.id}`" class="block">
+    <Link :href="`/client/booking/otp/${vehicle.id}`" class="block">
       <div class="relative aspect-[4/3] overflow-hidden">
         <img
           :src="vehicle.image"
@@ -82,7 +82,7 @@ const emit = defineEmits<{
       </div>
     </Link>
 
-    <Link :href="`/client/booking/${vehicle.id}`" class="block">
+    <Link :href="`/client/booking/otp/${vehicle.id}`" class="block">
       <CardHeader class="pb-3">
         <div class="flex items-start justify-between gap-2">
           <div class="flex-1 min-w-0">

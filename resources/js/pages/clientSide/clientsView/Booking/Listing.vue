@@ -185,8 +185,8 @@ const toggleFavorite = (id: number) => {
 const handleBook = (id: number) => {
   const vehicle = vehicles.value.find(v => v.id === id);
   console.log('Booking vehicle:', vehicle?.name);
-  // Navigate to booking details page
-  router.visit(`/client/booking/${id}`);
+  // Navigate to OTP verification page
+  router.visit(`/client/booking/otp/${id}`);
 };
 
 const handleSearch = (query: string) => {

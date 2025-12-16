@@ -42,6 +42,12 @@ Route::middleware(['auth','role:client'])->group(function () {
             return Inertia::render('clientSide/clientsView/Booking/Listing');
         })->name('client.booking');
         
+        Route::get('/client/booking/otp/{id}', function ($id) {
+            return Inertia::render('clientSide/clientsView/Booking/OTP/otp', [
+                'vehicleId' => $id
+            ]);
+        })->name('client.booking.otp');
+        
         Route::get('/client/booking/form', function () {
             return Inertia::render('clientSide/clientsView/Booking/Form');
         })->name('client.booking.form');
