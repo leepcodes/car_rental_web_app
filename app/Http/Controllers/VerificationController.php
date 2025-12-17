@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\OTP;
 use App\Models\User;
-use App\Mail\OTPMail;
+use App\Mail\OTPVerificationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -113,7 +113,7 @@ class VerificationController extends Controller
             // Send OTP via Email
             try {
                 Log::info('Attempting to send email...');
-                Mail::to($user->email)->send(new OTPMail($user, $code));
+                Mail::to($user->email)->send(new OTPVerificationMail($user, $code));
                 Log::info('Email sent successfully to:', ['email' => $user->email]);
             } catch (\Exception $emailError) {
                 Log::error('Email sending failed:', [
