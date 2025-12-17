@@ -49,6 +49,8 @@ class HandleInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                     'user_type' => $request->user()->user_type,  // ✅ Safe na dito
                     'profile_completed' => $request->user()->profile_completed,
+                    'is_verified' => (bool) $request->user()->is_verified,
+                    'email_verified_at' => $request->user()->email_verified_at,
                     'avatar' => $request->user()->avatar ?? null,
                 ] : null,  // ✅ Pag walang user, null lang
             ],

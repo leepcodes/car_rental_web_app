@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -19,16 +20,59 @@ class VerificationController extends Controller
      */
     public function show(Request $request, $vehicleId = null)
     {
-        Log::info('=== OTP Verification Page Loaded ===');
-        
-        $user = Auth::user();
-        Log::info('User authenticated:', [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'name' => $user->name,
-            'is_verified' => $user->is_verified ?? false,
-            'email_verified_at' => $user->email_verified_at
+        Log::info('=== OTP SHOW METHOD CALLED ===');
+        Log::info('Request details:', [
+            'url' => $request->fullUrl(),
+            'path' => $request->path(),
+            'vehicle_id' => $vehicleId,
         ]);
+        
+        $user = Auth::user()->fresh(); // Get fresh data from DB
+        
+        // ✅ FIX: Use the SAME verification logic as middleware
+        $isVerifiedInt = $user->is_verified == 1 || $user->is_verified === true;
+        $isVerifiedBool = $user->is_verified === true;
+        
+        // Check if email_verified_at is a valid date (not 0000-00-00)
+        $hasValidEmailVerified = false;
+        if ($user->email_verified_at) {
+            try {
+                $date = Carbon::parse($user->email_verified_at);
+                $hasValidEmailVerified = $date->year > 1000;
+            } catch (\Exception $e) {
+                $hasValidEmailVerified = false;
+            }
+        }
+        
+        $isVerified = $isVerifiedInt || $isVerifiedBool || $hasValidEmailVerified;
+        
+        Log::info('User verification status check:', [
+            'user_id' => $user->id,
+            'is_verified' => $user->is_verified,
+            'is_verified_type' => gettype($user->is_verified),
+            'email_verified_at' => $user->email_verified_at,
+            'isVerifiedInt' => $isVerifiedInt,
+            'isVerifiedBool' => $isVerifiedBool,
+            'hasValidEmailVerified' => $hasValidEmailVerified,
+            'computed_isVerified' => $isVerified
+        ]);
+        
+        if ($isVerified) {
+            Log::warning('⚠️ VERIFIED USER ACCESSING OTP PAGE - REDIRECTING AWAY');
+            
+            // Determine redirect destination
+            if ($vehicleId) {
+                $redirectUrl = route('client.booking.show', ['id' => $vehicleId]);
+                Log::info('Redirecting verified user to vehicle page:', ['url' => $redirectUrl]);
+                return redirect($redirectUrl);
+            }
+            
+            $redirectUrl = route('client.booking');
+            Log::info('Redirecting verified user to booking index:', ['url' => $redirectUrl]);
+            return redirect($redirectUrl);
+        }
+        
+        Log::info('✅ User NOT verified, showing OTP page');
         
         // Get vehicle details if needed
         $vehicleName = null;
@@ -37,7 +81,7 @@ class VerificationController extends Controller
             Log::info('Vehicle ID provided:', ['vehicle_id' => $vehicleId]);
         }
 
-        // Auto-generate OTP when page loads
+        // Auto-generate OTP when page loads (only for unverified users)
         try {
             $this->generateOTPForUser($user);
             Log::info('OTP generation completed successfully');
@@ -184,7 +228,7 @@ class VerificationController extends Controller
      */
     public function verify(Request $request)
     {
-        Log::info('=== OTP Verification Attempt ===', [
+        Log::info('=== OTP VERIFICATION ATTEMPT ===', [
             'code' => $request->code,
             'vehicle_id' => $request->vehicle_id
         ]);
@@ -249,38 +293,88 @@ class VerificationController extends Controller
                 ], 422);
             }
 
-            // Mark OTP as used
-            $otp->update(['status' => 'used']);
-            Log::info('OTP marked as used');
+            // ✅ CRITICAL FIX: Use DB transaction to ensure atomic update
+            DB::beginTransaction();
+            
+            try {
+                Log::info('Starting database transaction for user verification');
+                
+                // Mark OTP as used FIRST
+                DB::table('otps')
+                    ->where('id', $otp->id)
+                    ->update(['status' => 'used', 'updated_at' => Carbon::now()]);
+                
+                Log::info('OTP marked as used in database');
 
-            // ✅ FIX: Mark user as verified AND set email_verified_at timestamp
-            $now = Carbon::now();
-            $user->update([
-                'is_verified' => true,
-                'email_verified_at' => $now
+                // ✅ FIX: Update user verification with proper types
+                $now = Carbon::now();
+                
+                $updateResult = DB::table('users')
+                    ->where('id', $user->id)
+                    ->update([
+                        'is_verified' => 1, // Explicitly integer 1
+                        'email_verified_at' => $now->format('Y-m-d H:i:s'),
+                        'updated_at' => $now->format('Y-m-d H:i:s')
+                    ]);
+                
+                Log::info('User verification update executed:', [
+                    'user_id' => $user->id,
+                    'affected_rows' => $updateResult,
+                    'is_verified' => 1,
+                    'email_verified_at' => $now->format('Y-m-d H:i:s')
+                ]);
+
+                // Verify the update in database
+                $dbCheck = DB::table('users')
+                    ->where('id', $user->id)
+                    ->first(['is_verified', 'email_verified_at']);
+                
+                Log::info('Database verification after update:', [
+                    'user_id' => $user->id,
+                    'db_is_verified' => $dbCheck->is_verified,
+                    'db_is_verified_type' => gettype($dbCheck->is_verified),
+                    'db_email_verified_at' => $dbCheck->email_verified_at
+                ]);
+
+                DB::commit();
+                
+                Log::info('✅ Transaction committed successfully');
+                
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('❌ Transaction failed and rolled back:', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                throw $e;
+            }
+
+            // ⚠️ CRITICAL: Force reload user from database
+            Auth::logout(); // Clear current auth
+            $freshUser = User::find($user->id);
+            Auth::login($freshUser); // Re-login with fresh data
+            
+            Log::info('User re-authenticated with fresh data:', [
+                'user_id' => $freshUser->id,
+                'is_verified' => $freshUser->is_verified,
+                'is_verified_type' => gettype($freshUser->is_verified),
+                'email_verified_at' => $freshUser->email_verified_at
             ]);
             
-            Log::info('User verification updated:', [
-                'user_id' => $user->id,
-                'is_verified' => true,
-                'email_verified_at' => $now->toDateTimeString()
+            // ⚠️ CRITICAL: Regenerate session
+            $request->session()->regenerate();
+            $request->session()->put('auth.password_confirmed_at', time());
+            
+            Log::info('Session regenerated');
+            
+            // Final verification check
+            $finalCheck = Auth::user();
+            Log::info('Final auth check after re-login:', [
+                'auth_is_verified' => $finalCheck->is_verified,
+                'auth_email_verified_at' => $finalCheck->email_verified_at
             ]);
 
-            // ⚠️ CRITICAL: Refresh user model to get updated values from database
-            $user->refresh();
-            
-            // ⚠️ CRITICAL: Update the authenticated user in session
-            Auth::setUser($user);
-            
-            Log::info('User verification confirmed and session refreshed:', [
-                'user_id' => $user->id,
-                'is_verified' => $user->is_verified,
-                'is_verified_type' => gettype($user->is_verified),
-                'email_verified_at' => $user->email_verified_at,
-                'session_user_verified' => Auth::user()->is_verified
-            ]);
-
-            // ✅ Get redirect URL - prioritize intended URL from session
+            // ✅ Get redirect URL
             $redirectUrl = session('url.intended');
             
             Log::info('Checking redirect URL:', [
@@ -289,23 +383,22 @@ class VerificationController extends Controller
                 'vehicle_id_value' => $request->vehicle_id
             ]);
             
-            // If no intended URL, check for vehicle_id
             if (!$redirectUrl) {
                 if ($request->vehicle_id) {
                     $redirectUrl = route('client.booking.show', ['id' => $request->vehicle_id]);
                     Log::info('Using vehicle_id for redirect:', ['url' => $redirectUrl]);
                 } else {
-                    $redirectUrl = route('client.booking.index');
+                    $redirectUrl = route('client.booking');
                     Log::info('No vehicle_id, using booking index:', ['url' => $redirectUrl]);
                 }
             }
             
-            // Clear the intended URL from session
+            // Clear the intended URL
             session()->forget('url.intended');
 
-            Log::info('OTP verification successful, final redirect URL:', [
-                'url' => $redirectUrl,
-                'final_user_is_verified' => Auth::user()->is_verified
+            Log::info('=== OTP VERIFICATION SUCCESSFUL ===', [
+                'redirect_url' => $redirectUrl,
+                'final_is_verified' => Auth::user()->is_verified
             ]);
 
             return response()->json([
@@ -313,20 +406,22 @@ class VerificationController extends Controller
                 'message' => 'Email verified successfully! You can now proceed with booking.',
                 'redirect_url' => $redirectUrl,
                 'user' => [
-                    'is_verified' => $user->is_verified,
-                    'email_verified_at' => $user->email_verified_at
+                    'is_verified' => Auth::user()->is_verified,
+                    'email_verified_at' => Auth::user()->email_verified_at
                 ]
             ]);
 
         } catch (\Exception $e) {
-            Log::error('OTP verification failed:', [
+            Log::error('❌ OTP verification failed:', [
                 'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to verify OTP'
+                'message' => 'Failed to verify OTP. Please try again.'
             ], 500);
         }
     }
@@ -436,7 +531,7 @@ class VerificationController extends Controller
      */
     public function checkVerification(Request $request)
     {
-        $user = Auth::user();
+        $user = Auth::user()->fresh(); // Get fresh data from DB
 
         if (!$user) {
             return response()->json([
@@ -447,7 +542,7 @@ class VerificationController extends Controller
 
         return response()->json([
             'success' => true,
-            'is_verified' => (bool) $user->is_verified,
+            'is_verified' => $user->is_verified,
             'email_verified_at' => $user->email_verified_at,
             'email' => $user->email
         ]);
