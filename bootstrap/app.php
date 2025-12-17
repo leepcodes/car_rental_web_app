@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'profile.complete' => \App\Http\Middleware\CheckProfileComplete::class,
+            'verified.user' => \App\Http\Middleware\EnsureUserIsVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

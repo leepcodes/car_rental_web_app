@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\ClientProfileController;  // Add this line
 use App\Http\Controllers\OperatorProfileController; // Add this line too if not already there
+use App\Http\Controllers\VerificationController;
 
 Route::get('/', function () {
     return Inertia::render('clientSide/Index', [
@@ -42,12 +43,6 @@ Route::middleware(['auth','role:client'])->group(function () {
             return Inertia::render('clientSide/clientsView/Booking/Listing');
         })->name('client.booking');
         
-        Route::get('/client/booking/otp/{id}', function ($id) {
-            return Inertia::render('clientSide/clientsView/Booking/OTP/otp', [
-                'vehicleId' => $id
-            ]);
-        })->name('client.booking.otp');
-        
         Route::get('/client/booking/form', function () {
             return Inertia::render('clientSide/clientsView/Booking/Form');
         })->name('client.booking.form');
@@ -74,5 +69,12 @@ Route::middleware(['auth','role:operator'])->group(function () {
         })->name('operator.dashboard');
     });
 });
-
+// Add to your routes/web.php or routes/api.php
+Route::middleware(['auth','verified.user'])->group(function () {
+    Route::get('/client/booking/otp/{vehicleId?}', [VerificationController::class, 'show'])->name('otp.show');
+    Route::post('/api/otp/generate', [VerificationController::class, 'generate'])->name('otp.generate');
+    Route::post('/api/otp/verify', [VerificationController::class, 'verify'])->name('otp.verify');
+    Route::post('/api/otp/resend', [VerificationController::class, 'resend'])->name('otp.resend');
+    Route::post('/api/otp/cancel', [VerificationController::class, 'cancel'])->name('otp.cancel');
+});
 require __DIR__.'/settings.php';
