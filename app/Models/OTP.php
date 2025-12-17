@@ -7,20 +7,41 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class OTP extends Model
 {
-     use HasFactory;
+    use HasFactory;
 
+    /**
+     * The table associated with the model.
+     * This is important because Laravel will try to use 'o_t_p_s' by default
+     * 
+     * @var string
+     */
+    protected $table = 'otps';
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = [
         'user_id',
         'code',
         'status',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
     protected $casts = [
         'code' => 'string',
+        'status' => 'string',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     /**
-     * Get the user that owns the operator profile.
+     * Get the user that owns the OTP.
      */
     public function user()
     {

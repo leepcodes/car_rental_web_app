@@ -38,7 +38,7 @@ Route::middleware(['auth','role:client'])->group(function () {
     Route::post('/client/profile/complete', [ClientProfileController::class, 'store'])
         ->name('client.profile.complete.store');
 
-    Route::middleware(['profile.complete'])->group(function () {
+    Route::middleware(['profile.complete','verified.user'])->group(function () {
         Route::get('/client/booking', function () {
             return Inertia::render('clientSide/clientsView/Booking/Listing');
         })->name('client.booking');
@@ -70,7 +70,7 @@ Route::middleware(['auth','role:operator'])->group(function () {
     });
 });
 // Add to your routes/web.php or routes/api.php
-Route::middleware(['auth','verified.user'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/client/booking/otp/{vehicleId?}', [VerificationController::class, 'show'])->name('otp.show');
     Route::post('/api/otp/generate', [VerificationController::class, 'generate'])->name('otp.generate');
     Route::post('/api/otp/verify', [VerificationController::class, 'verify'])->name('otp.verify');
