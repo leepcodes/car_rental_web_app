@@ -25,7 +25,9 @@ class VerificationController extends Controller
         Log::info('User authenticated:', [
             'user_id' => $user->id,
             'email' => $user->email,
-            'name' => $user->name
+            'name' => $user->name,
+            'is_verified' => $user->is_verified ?? false,
+            'email_verified_at' => $user->email_verified_at
         ]);
         
         // Get vehicle details if needed
@@ -251,21 +253,69 @@ class VerificationController extends Controller
             $otp->update(['status' => 'used']);
             Log::info('OTP marked as used');
 
-            // Mark user as verified
-            $user->update(['is_verified' => true]);
-            Log::info('User marked as verified:', ['user_id' => $user->id]);
+            // ✅ FIX: Mark user as verified AND set email_verified_at timestamp
+            $now = Carbon::now();
+            $user->update([
+                'is_verified' => true,
+                'email_verified_at' => $now
+            ]);
+            
+            Log::info('User verification updated:', [
+                'user_id' => $user->id,
+                'is_verified' => true,
+                'email_verified_at' => $now->toDateTimeString()
+            ]);
 
-            // Get redirect URL
-            $redirectUrl = $request->vehicle_id 
-                ? route('client.booking.show', $request->vehicle_id)
-                : route('client.booking.index');
+            // ⚠️ CRITICAL: Refresh user model to get updated values from database
+            $user->refresh();
+            
+            // ⚠️ CRITICAL: Update the authenticated user in session
+            Auth::setUser($user);
+            
+            Log::info('User verification confirmed and session refreshed:', [
+                'user_id' => $user->id,
+                'is_verified' => $user->is_verified,
+                'is_verified_type' => gettype($user->is_verified),
+                'email_verified_at' => $user->email_verified_at,
+                'session_user_verified' => Auth::user()->is_verified
+            ]);
 
-            Log::info('OTP verification successful, redirecting to:', ['url' => $redirectUrl]);
+            // ✅ Get redirect URL - prioritize intended URL from session
+            $redirectUrl = session('url.intended');
+            
+            Log::info('Checking redirect URL:', [
+                'session_intended' => $redirectUrl,
+                'has_vehicle_id' => (bool) $request->vehicle_id,
+                'vehicle_id_value' => $request->vehicle_id
+            ]);
+            
+            // If no intended URL, check for vehicle_id
+            if (!$redirectUrl) {
+                if ($request->vehicle_id) {
+                    $redirectUrl = route('client.booking.show', ['id' => $request->vehicle_id]);
+                    Log::info('Using vehicle_id for redirect:', ['url' => $redirectUrl]);
+                } else {
+                    $redirectUrl = route('client.booking.index');
+                    Log::info('No vehicle_id, using booking index:', ['url' => $redirectUrl]);
+                }
+            }
+            
+            // Clear the intended URL from session
+            session()->forget('url.intended');
+
+            Log::info('OTP verification successful, final redirect URL:', [
+                'url' => $redirectUrl,
+                'final_user_is_verified' => Auth::user()->is_verified
+            ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'OTP verified successfully',
-                'redirect_url' => $redirectUrl
+                'message' => 'Email verified successfully! You can now proceed with booking.',
+                'redirect_url' => $redirectUrl,
+                'user' => [
+                    'is_verified' => $user->is_verified,
+                    'email_verified_at' => $user->email_verified_at
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -379,5 +429,27 @@ class VerificationController extends Controller
                 'message' => 'Failed to cancel OTP'
             ], 500);
         }
+    }
+
+    /**
+     * Check if user email is verified (API endpoint)
+     */
+    public function checkVerification(Request $request)
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not authenticated'
+            ], 401);
+        }
+
+        return response()->json([
+            'success' => true,
+            'is_verified' => (bool) $user->is_verified,
+            'email_verified_at' => $user->email_verified_at,
+            'email' => $user->email
+        ]);
     }
 }
