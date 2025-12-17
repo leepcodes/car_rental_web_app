@@ -26,9 +26,40 @@ const props = withDefaults(
 const otp = ref(['', '', '', '', '', '']);
 const inputRefs = ref<HTMLInputElement[]>([]);
 const isVerifying = ref(false);
+const isSending = ref(false);
+const codeSent = ref(false);
 const errorMessage = ref('');
-const canResend = ref(true);
+const canResend = ref(false);
 const countdown = ref(0);
+
+// Send OTP code
+const sendCode = () => {
+  isSending.value = true;
+  errorMessage.value = '';
+
+  // Simulate sending OTP (replace with actual API call)
+  setTimeout(() => {
+    console.log('Sending OTP code...');
+    isSending.value = false;
+    codeSent.value = true;
+    canResend.value = false;
+    countdown.value = 60;
+
+    // Start countdown
+    const interval = setInterval(() => {
+      countdown.value--;
+      if (countdown.value <= 0) {
+        clearInterval(interval);
+        canResend.value = true;
+      }
+    }, 1000);
+
+    // Auto-focus first input after code is sent
+    nextTick(() => {
+      focusInput(0);
+    });
+  }, 1500);
+};
 
 // Focus management
 const focusInput = (index: number) => {
@@ -124,25 +155,29 @@ const verifyOtp = () => {
 const resendOtp = () => {
   if (!canResend.value) return;
 
+  isSending.value = true;
   canResend.value = false;
   countdown.value = 60;
   errorMessage.value = '';
   
   // Clear current OTP
   otp.value = ['', '', '', '', '', ''];
-  focusInput(0);
 
-  // Simulate sending OTP
-  console.log('Resending OTP...');
+  // Simulate resending OTP
+  setTimeout(() => {
+    console.log('Resending OTP...');
+    isSending.value = false;
+    focusInput(0);
 
-  // Start countdown
-  const interval = setInterval(() => {
-    countdown.value--;
-    if (countdown.value <= 0) {
-      clearInterval(interval);
-      canResend.value = true;
-    }
-  }, 1000);
+    // Start countdown
+    const interval = setInterval(() => {
+      countdown.value--;
+      if (countdown.value <= 0) {
+        clearInterval(interval);
+        canResend.value = true;
+      }
+    }, 1000);
+  }, 1500);
 };
 
 // Go back to listings
@@ -152,7 +187,7 @@ const goBack = () => {
 
 // Auto-verify when OTP is complete
 const autoVerify = computed(() => {
-  if (isOtpComplete.value && !isVerifying.value && !errorMessage.value) {
+  if (isOtpComplete.value && !isVerifying.value && !errorMessage.value && codeSent.value) {
     verifyOtp();
   }
   return null;
@@ -163,19 +198,26 @@ const autoVerify = computed(() => {
   <Head title="OTP Verification" />
   <AppHeader :can-register="canRegister" />
   
-  <div class="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 flex items-center justify-center py-12 px-4">
-    <div class="w-full max-w-md">
+  <div class="min-h-screen bg-gradient-to-br from-[#0081A7] via-[#006d91] to-[#00AFB9] flex items-center justify-center py-12 px-4 relative overflow-hidden">
+    <!-- Animated Background Elements -->
+    <div class="absolute inset-0 overflow-hidden">
+      <div class="absolute w-96 h-96 bg-white/5 rounded-full -top-48 -left-48 animate-pulse"></div>
+      <div class="absolute w-[500px] h-[500px] bg-white/5 rounded-full -bottom-48 -right-48 animate-pulse delay-1000"></div>
+      <div class="absolute w-72 h-72 bg-white/10 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+    </div>
+
+    <div class="w-full max-w-md relative z-10">
       <!-- Back Button -->
       <button
         @click="goBack"
-        class="flex items-center gap-2 text-neutral-600 hover:text-[#0081A7] transition-colors group mb-6"
+        class="flex items-center gap-2 text-white hover:text-white/80 transition-colors group mb-6 backdrop-blur-sm bg-white/10 px-4 py-2 rounded-lg"
       >
         <ArrowLeft class="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         <span class="font-medium">Back to Listings</span>
       </button>
 
       <!-- OTP Card -->
-      <Card class="border-2 border-[#0081A7]/20 shadow-2xl overflow-hidden">
+      <Card class="border-0 shadow-2xl overflow-hidden backdrop-blur-sm bg-white/95">
         <!-- Header -->
         <CardHeader class="bg-gradient-to-br from-[#0081A7] to-[#00AFB9] text-white text-center pb-8">
           <div class="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
@@ -196,78 +238,106 @@ const autoVerify = computed(() => {
             <p class="font-semibold text-neutral-900">{{ vehicleName }}</p>
           </div>
 
-          <!-- OTP Input -->
-          <div class="mb-6">
-            <div class="flex justify-center gap-2 mb-4">
-              <input
-                v-for="(digit, index) in otp"
-                :key="index"
-                :ref="el => { if (el) inputRefs[index] = el as HTMLInputElement }"
-                v-model="otp[index]"
-                type="text"
-                inputmode="numeric"
-                maxlength="1"
-                @input="handleInput(index, $event)"
-                @keydown="handleKeydown(index, $event)"
-                @paste="index === 0 ? handlePaste($event) : null"
-                :class="[
-                  'w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg transition-all outline-none',
-                  errorMessage 
-                    ? 'border-red-500 bg-red-50 text-red-600' 
-                    : digit 
-                      ? 'border-[#00AFB9] bg-[#00AFB9]/5 text-[#0081A7]' 
-                      : 'border-neutral-300 hover:border-[#0081A7] focus:border-[#00AFB9] focus:ring-2 focus:ring-[#00AFB9]/20'
-                ]"
-              />
-            </div>
-
-            <!-- Error Message -->
-            <div v-if="errorMessage" class="flex items-center gap-2 text-red-600 text-sm justify-center mb-4">
-              <AlertCircle class="w-4 h-4" />
-              <span>{{ errorMessage }}</span>
-            </div>
-
-            <!-- Loading State -->
-            <div v-if="isVerifying" class="text-center">
-              <div class="inline-flex items-center gap-2 text-[#0081A7]">
-                <div class="w-5 h-5 border-2 border-[#0081A7] border-t-transparent rounded-full animate-spin"></div>
-                <span class="text-sm font-medium">Verifying...</span>
-              </div>
-            </div>
+          <!-- Send Code Section (Before OTP is sent) -->
+          <div v-if="!codeSent" class="text-center">
+            <p class="text-neutral-600 mb-6">
+              We'll send a 6-digit verification code to your registered phone number to confirm your identity.
+            </p>
+            <button
+              @click="sendCode"
+              :disabled="isSending"
+              class="w-full py-4 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto'] flex items-center justify-center gap-2"
+            >
+              <div v-if="isSending" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span v-if="isSending">Sending Code...</span>
+              <span v-else>Send Verification Code</span>
+            </button>
           </div>
 
-          <!-- Verify Button (optional, since auto-verify is enabled) -->
-          <button
-            @click="verifyOtp"
-            :disabled="!isOtpComplete || isVerifying"
-            class="w-full py-3 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto'] mb-4"
-          >
-            <span v-if="isVerifying">Verifying...</span>
-            <span v-else>Verify Code</span>
-          </button>
+          <!-- OTP Input Section (After code is sent) -->
+          <div v-else>
+            <div class="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+              <p class="text-sm text-green-800 flex items-center justify-center gap-2">
+                <CheckCircle class="w-4 h-4" />
+                Code sent successfully!
+              </p>
+            </div>
 
-          <!-- Resend OTP -->
-          <div class="text-center">
-            <p class="text-sm text-neutral-600 mb-2">Didn't receive the code?</p>
+            <!-- OTP Input -->
+            <div class="mb-6">
+              <div class="flex justify-center gap-2 mb-4">
+                <input
+                  v-for="(digit, index) in otp"
+                  :key="index"
+                  :ref="el => { if (el) inputRefs[index] = el as HTMLInputElement }"
+                  v-model="otp[index]"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="1"
+                  @input="handleInput(index, $event)"
+                  @keydown="handleKeydown(index, $event)"
+                  @paste="index === 0 ? handlePaste($event) : null"
+                  :class="[
+                    'w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg transition-all outline-none',
+                    errorMessage 
+                      ? 'border-red-500 bg-red-50 text-red-600' 
+                      : digit 
+                        ? 'border-[#00AFB9] bg-[#00AFB9]/5 text-[#0081A7]' 
+                        : 'border-neutral-300 hover:border-[#0081A7] focus:border-[#00AFB9] focus:ring-2 focus:ring-[#00AFB9]/20'
+                  ]"
+                />
+              </div>
+
+              <!-- Error Message -->
+              <div v-if="errorMessage" class="flex items-center gap-2 text-red-600 text-sm justify-center mb-4">
+                <AlertCircle class="w-4 h-4" />
+                <span>{{ errorMessage }}</span>
+              </div>
+
+              <!-- Loading State -->
+              <div v-if="isVerifying" class="text-center">
+                <div class="inline-flex items-center gap-2 text-[#0081A7]">
+                  <div class="w-5 h-5 border-2 border-[#0081A7] border-t-transparent rounded-full animate-spin"></div>
+                  <span class="text-sm font-medium">Verifying...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Verify Button -->
             <button
-              @click="resendOtp"
-              :disabled="!canResend"
-              :class="[
-                'text-sm font-semibold transition-colors',
-                canResend 
-                  ? 'text-[#0081A7] hover:text-[#00AFB9] cursor-pointer' 
-                  : 'text-neutral-400 cursor-not-allowed'
-              ]"
+              @click="verifyOtp"
+              :disabled="!isOtpComplete || isVerifying"
+              class="w-full py-3 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto'] mb-4"
             >
-              <span v-if="canResend">Resend Code</span>
-              <span v-else>Resend in {{ countdown }}s</span>
+              <span v-if="isVerifying">Verifying...</span>
+              <span v-else>Verify Code</span>
             </button>
+
+            <!-- Resend OTP -->
+            <div class="text-center">
+              <p class="text-sm text-neutral-600 mb-2">Didn't receive the code?</p>
+              <button
+                @click="resendOtp"
+                :disabled="!canResend || isSending"
+                :class="[
+                  'text-sm font-semibold transition-colors inline-flex items-center gap-2',
+                  canResend && !isSending
+                    ? 'text-[#0081A7] hover:text-[#00AFB9] cursor-pointer' 
+                    : 'text-neutral-400 cursor-not-allowed'
+                ]"
+              >
+                <div v-if="isSending" class="w-4 h-4 border-2 border-[#0081A7] border-t-transparent rounded-full animate-spin"></div>
+                <span v-if="isSending">Sending...</span>
+                <span v-else-if="canResend">Resend Code</span>
+                <span v-else>Resend in {{ countdown }}s</span>
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       <!-- Security Note -->
-      <div class="mt-6 p-4 bg-white rounded-lg border border-neutral-200 shadow-sm">
+      <div class="mt-6 p-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg">
         <div class="flex gap-3">
           <Shield class="w-5 h-5 text-[#0081A7] flex-shrink-0 mt-0.5" />
           <div>
@@ -281,9 +351,9 @@ const autoVerify = computed(() => {
 
       <!-- Help Text -->
       <div class="mt-4 text-center">
-        <p class="text-xs text-neutral-500">
+        <p class="text-xs text-white/80">
           Having trouble? Contact our support team at
-          <a href="#" class="text-[#0081A7] hover:underline font-semibold">support@carrental.com</a>
+          <a href="#" class="text-white hover:underline font-semibold">support@carrental.com</a>
         </p>
       </div>
     </div>

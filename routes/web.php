@@ -28,7 +28,7 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 // routes/web.php
 
-Route::middleware(['auth','role:client'])->group(function () {
+Route::middleware(['auth','role:client', 'verified.user'])->group(function () {
     
     // Client profile completion
     Route::get('/client/profile/complete', function () {
