@@ -14,6 +14,32 @@ use Inertia\Response;
 class ProfileController extends Controller
 {
     /**
+     * Complete the user's profile page.
+     */
+     public function complete(Request $request)
+    {
+        $validated = $request->validate([
+            'phone' => 'required|string',
+            'address' => 'required|string',
+            'date_of_birth' => 'required|date',
+          
+        ]);
+        
+        $user = auth()->user();
+        
+        $user->update([
+            ...$validated,
+            'profile_completed' => true,
+        ]);
+        
+        // Redirect to appropriate dashboard based on user_type
+        if ($user->user_type) {
+            return redirect()->route($user->user_type . '.dashboard');
+        }
+        
+        return redirect()->route('dashboard');
+    }
+    /**
      * Show the user's profile settings page.
      */
     public function edit(Request $request): Response
