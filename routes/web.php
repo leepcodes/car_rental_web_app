@@ -26,20 +26,10 @@ Route::get('/about', function () {
     ]);
 })->name('about');
 
-// ✅ OTP Routes - INSIDE auth middleware
+// ✅ OTP Page Route (web route for viewing page)
 Route::middleware(['auth'])->group(function () {
-    // OTP Page
     Route::get('/client/booking/otp/{vehicleId?}', [VerificationController::class, 'show'])
         ->name('otp.show');
-    
-    // OTP API Endpoints
-  
-    Route::post('/api/otp/resend', [VerificationController::class, 'resend'])
-        ->name('otp.resend');
-    Route::post('/api/otp/cancel', [VerificationController::class, 'cancel'])
-        ->name('otp.cancel');
-    Route::get('/api/otp/check', [VerificationController::class, 'checkVerification'])
-        ->name('otp.check');
 });
 
 // Dashboard route
@@ -47,10 +37,8 @@ Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// ✅ Client routes with proper middleware order
+// ✅ Client routes
 Route::middleware(['auth', 'role:client'])->group(function () {
-    
-    // Profile completion - does NOT require verification
     Route::get('/client/profile/complete', function () {
         return Inertia::render('clientSide/clientsView/profileCompletion/profileCompletion');
     })->name('client.profile.complete');
@@ -58,20 +46,15 @@ Route::middleware(['auth', 'role:client'])->group(function () {
     Route::post('/client/profile/complete', [ClientProfileController::class, 'store'])
         ->name('client.profile.complete.store');
 
-    // ✅ Routes that require BOTH profile completion AND email verification
     Route::middleware(['profile.complete', 'verified.user'])->group(function () {
-        
-        // Booking list page
         Route::get('/client/booking', function () {
             return Inertia::render('clientSide/clientsView/Booking/Listing');
         })->name('client.booking');
         
-        // Booking form page
         Route::get('/client/booking/form', function () {
             return Inertia::render('clientSide/clientsView/Booking/Form');
         })->name('client.booking.form');
         
-        // Individual vehicle details page
         Route::get('/client/booking/{id}', function ($id) {
             return Inertia::render('clientSide/clientsView/IndivList/IndivList', [
                 'vehicleId' => $id
@@ -82,8 +65,6 @@ Route::middleware(['auth', 'role:client'])->group(function () {
 
 // ✅ Operator routes
 Route::middleware(['auth', 'role:operator'])->group(function () {
-    
-    // Operator profile completion
     Route::get('/operator/profile/complete', function () {
         return Inertia::render('clientSide/operatorsView/operatorsProfileCompletion/operatorsProfileCompletion');
     })->name('operator.profile.complete');
@@ -97,5 +78,13 @@ Route::middleware(['auth', 'role:operator'])->group(function () {
         })->name('operator.dashboard');
     });
 });
+// Test API routes directly in web.php
+Route::prefix('api')->middleware(['auth:sanctum'])->group(function () {
+    Route::post('/otp/verify', [VerificationController::class, 'verify']);
+    Route::post('/otp/generate', [VerificationController::class, 'generate']);
+    Route::post('/otp/resend', [VerificationController::class, 'resend']);
+    Route::post('/otp/cancel', [VerificationController::class, 'cancel']);
+    Route::get('/otp/check', [VerificationController::class, 'checkVerification']);
+});
 
-require __DIR__.'/settings.php'; 
+require __DIR__.'/settings.php';

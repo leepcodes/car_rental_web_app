@@ -10,6 +10,7 @@ import {
   Lock
 } from 'lucide-vue-next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import axios from 'axios';
 
 const props = withDefaults(
   defineProps<{
@@ -29,36 +30,63 @@ const isVerifying = ref(false);
 const isSending = ref(false);
 const codeSent = ref(false);
 const errorMessage = ref('');
+const successMessage = ref('');
 const canResend = ref(false);
 const countdown = ref(0);
+let countdownInterval: ReturnType<typeof setInterval> | null = null;
 
-// Send OTP code
-const sendCode = () => {
+// Get CSRF token
+const getCsrfToken = () => {
+  const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  return token || '';
+};
+
+// Send OTP code - Call backend API
+const sendCode = async () => {
   isSending.value = true;
   errorMessage.value = '';
+  successMessage.value = '';
 
-  // Simulate sending OTP (replace with actual API call)
-  setTimeout(() => {
-    console.log('Sending OTP code...');
-    isSending.value = false;
-    codeSent.value = true;
-    canResend.value = false;
-    countdown.value = 60;
-
-    // Start countdown
-    const interval = setInterval(() => {
-      countdown.value--;
-      if (countdown.value <= 0) {
-        clearInterval(interval);
-        canResend.value = true;
+  try {
+    const response = await axios.post('/api/otp/generate', {}, {
+      headers: {
+        'X-CSRF-TOKEN': getCsrfToken(),
+        'Accept': 'application/json',
       }
-    }, 1000);
-
-    // Auto-focus first input after code is sent
-    nextTick(() => {
-      focusInput(0);
     });
-  }, 1500);
+
+    if (response.data.success) {
+      codeSent.value = true;
+      successMessage.value = 'Verification code sent to your email!';
+      canResend.value = false;
+      countdown.value = 60;
+
+      // Start countdown
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        countdown.value--;
+        if (countdown.value <= 0) {
+          if (countdownInterval) clearInterval(countdownInterval);
+          canResend.value = true;
+        }
+      }, 1000);
+
+      // Auto-focus first input after code is sent
+      nextTick(() => {
+        focusInput(0);
+      });
+
+      // Show debug code if available (development only)
+      if (response.data.debug_code) {
+        console.log('🔐 OTP Code (DEV ONLY):', response.data.debug_code);
+      }
+    }
+  } catch (error: any) {
+    console.error('Failed to send OTP:', error);
+    errorMessage.value = error.response?.data?.message || 'Failed to send verification code. Please try again.';
+  } finally {
+    isSending.value = false;
+  }
 };
 
 // Focus management
@@ -87,6 +115,13 @@ const handleInput = (index: number, event: Event) => {
   if (value && index < 5) {
     focusInput(index + 1);
   }
+
+  // Auto-verify when all digits entered
+  if (isOtpComplete.value) {
+    nextTick(() => {
+      verifyOtp();
+    });
+  }
 };
 
 // Handle paste
@@ -105,13 +140,26 @@ const handlePaste = (event: ClipboardEvent) => {
     // Focus last filled input or first empty
     const lastIndex = Math.min(digits.length - 1, 5);
     focusInput(lastIndex);
+
+    // Auto-verify if complete
+    if (digits.length === 6) {
+      nextTick(() => {
+        verifyOtp();
+      });
+    }
   }
 };
 
 // Handle backspace
 const handleKeydown = (index: number, event: KeyboardEvent) => {
-  if (event.key === 'Backspace' && !otp.value[index] && index > 0) {
-    focusInput(index - 1);
+  if (event.key === 'Backspace') {
+    if (!otp.value[index] && index > 0) {
+      // Move to previous input if current is empty
+      focusInput(index - 1);
+    } else {
+      // Clear current input
+      otp.value[index] = '';
+    }
   }
 };
 
@@ -125,59 +173,118 @@ const otpCode = computed(() => {
   return otp.value.join('');
 });
 
-// Verify OTP
-const verifyOtp = () => {
-  if (!isOtpComplete.value) return;
+// Verify OTP - Call backend API
+const verifyOtp = async () => {
+  if (!isOtpComplete.value || isVerifying.value) return;
 
   isVerifying.value = true;
   errorMessage.value = '';
+  successMessage.value = '';
 
-  // Simulate OTP verification (replace with actual API call)
-  setTimeout(() => {
-    // For demo purposes, accept any 6-digit code
-    // In production, verify against backend
-    const code = otpCode.value;
-    
-    if (code === '123456' || code.length === 6) { // Accept 123456 or any 6 digits for demo
-      // Success - navigate to vehicle details
-      router.visit(`/client/booking/${props.vehicleId}`);
-    } else {
-      errorMessage.value = 'Invalid OTP code. Please try again.';
-      isVerifying.value = false;
-      // Clear OTP
-      otp.value = ['', '', '', '', '', ''];
-      focusInput(0);
+  try {
+    const response = await axios.post('/api/otp/verify', {
+      code: otpCode.value,
+      vehicle_id: props.vehicleId || null
+    }, {
+      headers: {
+        'X-CSRF-TOKEN': getCsrfToken(),
+        'Accept': 'application/json',
+      }
+    });
+
+    if (response.data.success) {
+      successMessage.value = 'Email verified successfully!';
+      
+      // Wait a moment to show success message
+      setTimeout(() => {
+        // Redirect to the URL provided by backend
+        if (response.data.redirect_url) {
+          window.location.href = response.data.redirect_url;
+        } else if (props.vehicleId) {
+          router.visit(`/client/booking/${props.vehicleId}`);
+        } else {
+          router.visit('/client/booking');
+        }
+      }, 1000);
     }
-  }, 1500);
+  } catch (error: any) {
+    console.error('OTP verification failed:', error);
+    isVerifying.value = false;
+    
+    // Display error message
+    errorMessage.value = error.response?.data?.message || 'Invalid verification code. Please try again.';
+    
+    // Clear OTP inputs but don't redirect
+    otp.value = ['', '', '', '', '', ''];
+    focusInput(0);
+  }
 };
 
-// Resend OTP
-const resendOtp = () => {
-  if (!canResend.value) return;
+// Resend OTP - Call backend API
+const resendOtp = async () => {
+  if (!canResend.value || isSending.value) return;
 
   isSending.value = true;
   canResend.value = false;
   countdown.value = 60;
   errorMessage.value = '';
+  successMessage.value = '';
   
   // Clear current OTP
   otp.value = ['', '', '', '', '', ''];
 
-  // Simulate resending OTP
-  setTimeout(() => {
-    console.log('Resending OTP...');
-    isSending.value = false;
-    focusInput(0);
-
-    // Start countdown
-    const interval = setInterval(() => {
-      countdown.value--;
-      if (countdown.value <= 0) {
-        clearInterval(interval);
-        canResend.value = true;
+  try {
+    const response = await axios.post('/api/otp/resend', {}, {
+      headers: {
+        'X-CSRF-TOKEN': getCsrfToken(),
+        'Accept': 'application/json',
       }
-    }, 1000);
-  }, 1500);
+    });
+
+    if (response.data.success) {
+      successMessage.value = 'New verification code sent!';
+      focusInput(0);
+
+      // Start countdown
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        countdown.value--;
+        if (countdown.value <= 0) {
+          if (countdownInterval) clearInterval(countdownInterval);
+          canResend.value = true;
+        }
+      }, 1000);
+
+      // Show debug code if available (development only)
+      if (response.data.debug_code) {
+        console.log('🔐 New OTP Code (DEV ONLY):', response.data.debug_code);
+      }
+    }
+  } catch (error: any) {
+    console.error('Failed to resend OTP:', error);
+    
+    if (error.response?.status === 429) {
+      // Rate limited
+      const retryAfter = error.response.data.retry_after || 60;
+      countdown.value = retryAfter;
+      errorMessage.value = `Please wait ${retryAfter} seconds before requesting a new code.`;
+      
+      // Start countdown from retry_after
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        countdown.value--;
+        if (countdown.value <= 0) {
+          if (countdownInterval) clearInterval(countdownInterval);
+          canResend.value = true;
+        }
+      }, 1000);
+    } else {
+      errorMessage.value = error.response?.data?.message || 'Failed to resend code. Please try again.';
+      canResend.value = true;
+    }
+  } finally {
+    isSending.value = false;
+  }
 };
 
 // Go back to listings
@@ -185,12 +292,17 @@ const goBack = () => {
   router.visit('/client/booking');
 };
 
-// Auto-verify when OTP is complete
-const autoVerify = computed(() => {
-  if (isOtpComplete.value && !isVerifying.value && !errorMessage.value && codeSent.value) {
-    verifyOtp();
+// Cleanup on unmount
+const cleanup = () => {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
   }
-  return null;
+};
+
+// Register cleanup
+import { onUnmounted } from 'vue';
+onUnmounted(() => {
+  cleanup();
 });
 </script>
 
@@ -224,10 +336,10 @@ const autoVerify = computed(() => {
             <Lock class="w-10 h-10 text-white" />
           </div>
           <CardTitle class="text-2xl font-bold font-['Roboto'] mb-2">
-            Verify Your Identity
+            Verify Your Email
           </CardTitle>
           <CardDescription class="text-white/90 text-base">
-            Enter the 6-digit code sent to your registered phone number
+            We'll send a 6-digit code to your registered email
           </CardDescription>
         </CardHeader>
 
@@ -241,7 +353,7 @@ const autoVerify = computed(() => {
           <!-- Send Code Section (Before OTP is sent) -->
           <div v-if="!codeSent" class="text-center">
             <p class="text-neutral-600 mb-6">
-              We'll send a 6-digit verification code to your registered phone number to confirm your identity.
+              Click the button below to receive a verification code via email.
             </p>
             <button
               @click="sendCode"
@@ -256,10 +368,19 @@ const autoVerify = computed(() => {
 
           <!-- OTP Input Section (After code is sent) -->
           <div v-else>
-            <div class="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+            <!-- Success Message -->
+            <div v-if="successMessage && !errorMessage" class="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
               <p class="text-sm text-green-800 flex items-center justify-center gap-2">
                 <CheckCircle class="w-4 h-4" />
-                Code sent successfully!
+                {{ successMessage }}
+              </p>
+            </div>
+
+            <!-- Error Message -->
+            <div v-if="errorMessage" class="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
+              <p class="text-sm text-red-800 flex items-center justify-center gap-2">
+                <AlertCircle class="w-4 h-4" />
+                {{ errorMessage }}
               </p>
             </div>
 
@@ -277,41 +398,27 @@ const autoVerify = computed(() => {
                   @input="handleInput(index, $event)"
                   @keydown="handleKeydown(index, $event)"
                   @paste="index === 0 ? handlePaste($event) : null"
+                  :disabled="isVerifying"
                   :class="[
                     'w-12 h-14 text-center text-2xl font-bold border-2 rounded-lg transition-all outline-none',
                     errorMessage 
                       ? 'border-red-500 bg-red-50 text-red-600' 
                       : digit 
                         ? 'border-[#00AFB9] bg-[#00AFB9]/5 text-[#0081A7]' 
-                        : 'border-neutral-300 hover:border-[#0081A7] focus:border-[#00AFB9] focus:ring-2 focus:ring-[#00AFB9]/20'
+                        : 'border-neutral-300 hover:border-[#0081A7] focus:border-[#00AFB9] focus:ring-2 focus:ring-[#00AFB9]/20',
+                    isVerifying && 'opacity-50 cursor-not-allowed'
                   ]"
                 />
-              </div>
-
-              <!-- Error Message -->
-              <div v-if="errorMessage" class="flex items-center gap-2 text-red-600 text-sm justify-center mb-4">
-                <AlertCircle class="w-4 h-4" />
-                <span>{{ errorMessage }}</span>
               </div>
 
               <!-- Loading State -->
               <div v-if="isVerifying" class="text-center">
                 <div class="inline-flex items-center gap-2 text-[#0081A7]">
                   <div class="w-5 h-5 border-2 border-[#0081A7] border-t-transparent rounded-full animate-spin"></div>
-                  <span class="text-sm font-medium">Verifying...</span>
+                  <span class="text-sm font-medium">Verifying code...</span>
                 </div>
               </div>
             </div>
-
-            <!-- Verify Button -->
-            <button
-              @click="verifyOtp"
-              :disabled="!isOtpComplete || isVerifying"
-              class="w-full py-3 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto'] mb-4"
-            >
-              <span v-if="isVerifying">Verifying...</span>
-              <span v-else>Verify Code</span>
-            </button>
 
             <!-- Resend OTP -->
             <div class="text-center">
@@ -358,9 +465,6 @@ const autoVerify = computed(() => {
       </div>
     </div>
   </div>
-
-  <!-- Trigger auto-verify -->
-  <span v-show="false">{{ autoVerify }}</span>
 </template>
 
 <style scoped>
