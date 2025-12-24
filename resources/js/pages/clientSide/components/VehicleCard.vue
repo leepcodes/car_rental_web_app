@@ -40,7 +40,7 @@ const emit = defineEmits<{
 <template>
   <Card class="overflow-hidden hover:shadow-xl transition-shadow group">
     <!-- Image Section -->
-    <Link :href="`/client/booking/otp/${vehicle.id}`" class="block">
+    <Link :href="`/client/booking/${vehicle.id}`" class="block">
       <div class="relative aspect-[4/3] overflow-hidden">
         <img
           :src="vehicle.image"

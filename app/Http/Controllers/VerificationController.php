@@ -72,7 +72,7 @@ class VerificationController extends Controller
             ]);
         }
 
-        return Inertia::render('clientSide/clientsView/Booking/OTP/otp', [
+        return Inertia::render('clientSide/OTP/otp', [
             'vehicleId' => $vehicleId,
             'vehicleName' => $vehicleName,
             'canRegister' => true,

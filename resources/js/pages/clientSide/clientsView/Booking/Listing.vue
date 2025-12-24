@@ -3,8 +3,8 @@
 import { ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppHeader from '@/pages/clientSide/components/AppHeader.vue';
-import VehicleCard from '@/pages/clientSide/clientsView/Booking/VehicleCard.vue';
-import SearchFilters from '@/pages/clientSide/clientsView/Booking/SearchForm.vue';
+import VehicleCard from '@/pages/clientSide/components/VehicleCard.vue';
+import SearchFilters from '@/pages/clientSide/components/SearchForm.vue';
 import { Button } from '@/components/ui/button';
 withDefaults(
   defineProps<{

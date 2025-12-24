@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -46,10 +47,9 @@ Route::middleware(['auth', 'role:client'])->group(function () {
     Route::post('/client/profile/complete', [ClientProfileController::class, 'store'])
         ->name('client.profile.complete.store');
 
-    Route::middleware(['profile.complete', 'verified.user'])->group(function () {
-        Route::get('/client/booking', function () {
-            return Inertia::render('clientSide/clientsView/Booking/Listing');
-        })->name('client.booking');
+    // Protected client booking routes
+    Route::middleware(['profile.complete','verified.user'])->group(function () {
+        Route::get('/client/booking', [VehicleController::class, 'index'])->name('client.booking');
         
         Route::get('/client/booking/form', function () {
             return Inertia::render('clientSide/clientsView/Booking/Form');
@@ -60,6 +60,9 @@ Route::middleware(['auth', 'role:client'])->group(function () {
                 'vehicleId' => $id
             ]);
         })->name('client.booking.show');
+
+        // Client Vehicle Booking list route
+        
     });
 }); 
 
@@ -72,11 +75,23 @@ Route::middleware(['auth', 'role:operator'])->group(function () {
     Route::post('/operator/profile/complete', [OperatorProfileController::class, 'store'])
         ->name('operator.profile.complete.store');
     
-    Route::middleware(['profile.complete'])->group(function () {
+    // Protected operator dashboard route
+    Route::middleware(['profile.complete','verified.user'])->group(function () {
         Route::get('/operator/dashboard', function () {
             return Inertia::render('clientSide/operatorsView/Dashboard');
         })->name('operator.dashboard');
+    
+    // Vehicle management routes
+    Route::prefix('operator/vehicles')->name('operator.vehicles.')->controller(VehicleController::class)->group(function () {
+        Route::get('/', 'operatorIndex')->name('list');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::get('/{id}/edit', 'edit')->name('edit');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
     });
+     });
 });
 // Test API routes directly in web.php
 Route::prefix('api')->middleware(['auth:sanctum'])->group(function () {
