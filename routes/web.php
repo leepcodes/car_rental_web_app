@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ListingController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -49,20 +50,12 @@ Route::middleware(['auth', 'role:client'])->group(function () {
 
     // Protected client booking routes
     Route::middleware(['profile.complete','verified.user'])->group(function () {
-        Route::get('/client/booking', [VehicleController::class, 'index'])->name('client.booking');
+        Route::get('/client/booking', [ListingController::class, 'index'])->name('client.booking');
+        Route::get('/client/booking/{id}', [ListingController::class, 'show'])->name('client.booking.show');
         
         Route::get('/client/booking/form', function () {
             return Inertia::render('clientSide/clientsView/Booking/Form');
         })->name('client.booking.form');
-        
-        Route::get('/client/booking/{id}', function ($id) {
-            return Inertia::render('clientSide/clientsView/IndivList/IndivList', [
-                'vehicleId' => $id
-            ]);
-        })->name('client.booking.show');
-
-        // Client Vehicle Booking list route
-        
     });
 }); 
 

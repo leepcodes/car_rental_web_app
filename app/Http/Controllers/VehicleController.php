@@ -23,25 +23,9 @@ class VehicleController extends Controller
             ->latest()
             ->paginate(15);
 
-        return inertia::render('clientSide/operatorsView/Vehicle/OperatorIndex', [
+        return Inertia::render('clientSide/operatorsView/Vehicle/OperatorIndex', [
             'vehicles' => $vehicles,
         ]);
-    
-    }
-
-    /**
-     * Display a listing of all vehicles from all operators.
-     */
-    public function index()
-    {
-        $vehicles = Vehicle::with(['operator', 'operatorLocation'])
-            ->latest()
-            ->paginate(15);
-
-        return Inertia::render('clientSide/clientsView/Booking/Listing', [
-            'vehicles' => $vehicles,
-        ]);
-    
     }
 
     /**
@@ -49,7 +33,7 @@ class VehicleController extends Controller
      */
     public function create()
     {
-        return inertia::render('clientSide/operatorsView/Vehicle/Create', [
+        return Inertia::render('clientSide/operatorsView/Vehicle/Create', [
         ]);
     }
 
@@ -58,20 +42,49 @@ class VehicleController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'license_plate' => ['required', 'string', 'max:20', 'unique:vehicles,license_plate'],
-            'chasis_number' => ['required', 'string', 'max:50', 'unique:vehicles,chasis_number'],
-            'brand' => ['required', 'string', 'max:100'],
-            'model' => ['required', 'string', 'max:100'],
-            'year' => ['required', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
-            'is_active' => ['boolean'],
-            'operator_locations' => ['nullable', 'exists:operator__locations,id'],
-            'coding_day' => ['nullable', 'string', 'max:20'],
-            'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'mimes:jpeg,jpg,png,pdf', 'max:5120'], // 5MB max
-            'attachment_types' => ['nullable', 'array'],
-            'attachment_types.*' => ['string', 'in:or,cr,receipt,inspection,insurance,other'],
+        // Log incoming request data
+        \Log::info('Vehicle Store Request Started', [
+            'all_data' => $request->except(['attachments']),
+            'has_files' => $request->hasFile('attachments'),
+            'files_count' => $request->hasFile('attachments') ? count($request->file('attachments')) : 0,
         ]);
+
+        try {
+            $validated = $request->validate([
+                'license_plate' => ['required', 'string', 'max:20', 'unique:vehicles,license_plate'],
+                'chasis_number' => ['required', 'string', 'max:50', 'unique:vehicles,chasis_number'],
+                'brand' => ['required', 'string', 'max:100'],
+                'model' => ['required', 'string', 'max:100'],
+                'year' => ['required', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
+                'price' => ['required', 'numeric', 'min:0'],
+                'description' => ['nullable', 'string'],
+                'body_type' => ['nullable', 'string', 'in:Sedan,Hatchback,MPV,SUV,Van,Pickup'],
+                'fuel_type' => ['nullable', 'string', 'in:Gasoline,Diesel,Hybrid,Electric'],
+                'transmission' => ['nullable', 'string', 'in:Manual,Automatic,CVT'],
+                'color' => ['nullable', 'string', 'max:50'],
+                'seating_capacity' => ['nullable', 'integer', 'min:1', 'max:50'],
+                'is_active' => ['boolean'],
+                'is_featured' => ['boolean'],
+                'operator_locations' => ['nullable', 'exists:operator__locations,id'],
+                'coding_day' => ['nullable', 'string', 'max:20'],
+                'features' => ['nullable', 'array'],
+                'features.*' => ['string'],
+                'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
+                'reviews' => ['nullable', 'integer', 'min:0'],
+                'attachments' => ['nullable', 'array'],
+                'attachments.*' => ['file', 'mimes:jpeg,jpg,png,pdf', 'max:5120'], // 5MB max
+                'attachment_types' => ['nullable', 'array'],
+                'attachment_types.*' => ['string', 'in:or,cr,insurance,vehicle_photo,other'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation Failed', [
+                'errors' => $e->errors(),
+                'messages' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+
+        \Log::info('Validation Passed', ['validated' => array_keys($validated)]);
 
         DB::beginTransaction();
 
@@ -84,36 +97,87 @@ class VehicleController extends Controller
                 'brand' => $validated['brand'],
                 'model' => $validated['model'],
                 'year' => $validated['year'],
+                'price' => $validated['price'],
+                'description' => $validated['description'] ?? null,
+                'body_type' => $validated['body_type'] ?? null,
+                'fuel_type' => $validated['fuel_type'] ?? null,
+                'transmission' => $validated['transmission'] ?? null,
+                'color' => $validated['color'] ?? null,
+                'seating_capacity' => $validated['seating_capacity'] ?? null,
                 'is_active' => $validated['is_active'] ?? true,
+                'is_featured' => $validated['is_featured'] ?? false,
                 'operator_locations' => $validated['operator_locations'] ?? null,
                 'coding_day' => $validated['coding_day'] ?? null,
+                'features' => !empty($validated['features']) ? json_encode($validated['features']) : null,
+                'rating' => $validated['rating'] ?? 5.0,
+                'reviews' => $validated['reviews'] ?? 0,
             ]);
+
+            \Log::info('Vehicle Created', ['vehicle_id' => $vehicle->id]);
 
             // Handle file attachments
             if ($request->hasFile('attachments')) {
+                \Log::info('Processing Attachments', [
+                    'count' => count($request->file('attachments'))
+                ]);
+
                 foreach ($request->file('attachments') as $index => $file) {
-                    $path = $file->store('vehicle-attachments', 'public');
+                    $attachmentType = $request->attachment_types[$index] ?? 'other';
                     
-                    Vehicle_Attachment::create([
+                    \Log::info('Processing File', [
+                        'index' => $index,
+                        'original_name' => $file->getClientOriginalName(),
+                        'size' => $file->getSize(),
+                        'mime' => $file->getMimeType(),
+                        'attachment_type' => $attachmentType,
+                    ]);
+
+                    // Determine storage path based on attachment type
+                    if ($attachmentType === 'vehicle_photo') {
+                        $path = $file->store('vehicles', 'public');
+                    } else {
+                        $path = $file->store('attachments', 'public');
+                    }
+                    
+                    \Log::info('File Stored', ['path' => $path]);
+                    
+                    $attachment = Vehicle_Attachment::create([
                         'vehicle_id' => $vehicle->id,
-                        'attachment_type' => $request->attachment_types[$index] ?? 'other',
+                        'attachment_type' => $attachmentType,
                         'attachment_url' => $path,
                     ]);
+
+                    \Log::info('Attachment Record Created', ['attachment_id' => $attachment->id]);
                 }
+            } else {
+                \Log::info('No Attachments Found in Request');
             }
 
             DB::commit();
 
+            \Log::info('Transaction Committed Successfully', [
+                'vehicle_id' => $vehicle->id,
+                'redirect_route' => route('operator.vehicles.list')
+            ]);
+
             return redirect()
-                ->route('vehicles.operator-index')
+                ->route('operator.vehicles.list')
                 ->with('success', 'Vehicle created successfully.');
 
         } catch (\Exception $e) {
             DB::rollBack();
             
+            \Log::error('Vehicle Creation Failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()
                 ->back()
                 ->withInput()
+                ->withErrors(['error' => 'Failed to create vehicle: ' . $e->getMessage()])
                 ->with('error', 'Failed to create vehicle: ' . $e->getMessage());
         }
     }
@@ -125,10 +189,21 @@ class VehicleController extends Controller
     {
         $vehicle->load(['operator', 'operatorLocation']);
         
-        // Get vehicle attachments
-        $attachments = Vehicle_Attachment::where('vehicle_id', $vehicle->id)->get();
+        // Get vehicle attachments with full URL
+        $attachments = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
+            ->get()
+            ->map(function ($attachment) {
+                return [
+                    'id' => $attachment->id,
+                    'vehicle_id' => $attachment->vehicle_id,
+                    'attachment_type' => $attachment->attachment_type,
+                    'attachment_url' => $attachment->attachment_url,
+                    'full_url' => Storage::url($attachment->attachment_url),
+                    'created_at' => $attachment->created_at,
+                ];
+            });
 
-        return inertia::render('clientSide/operatorsView/Vehicle/Show', [
+        return Inertia::render('clientSide/operatorsView/Vehicle/Show', [
             'vehicles' => $vehicle,
             'attachments' => $attachments,
         ]);
@@ -144,9 +219,21 @@ class VehicleController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $attachments = Vehicle_Attachment::where('vehicle_id', $vehicle->id)->get();
+        // Get vehicle attachments with full URL
+        $attachments = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
+            ->get()
+            ->map(function ($attachment) {
+                return [
+                    'id' => $attachment->id,
+                    'vehicle_id' => $attachment->vehicle_id,
+                    'attachment_type' => $attachment->attachment_type,
+                    'attachment_url' => $attachment->attachment_url,
+                    'full_url' => Storage::url($attachment->attachment_url),
+                    'created_at' => $attachment->created_at,
+                ];
+            });
 
-        return inertia::render('clientSide/operatorsView/Vehicle/Edit', [
+        return Inertia::render('clientSide/operatorsView/Vehicle/Edit', [
             'vehicle' => $vehicle,
             'attachments' => $attachments,
         ]);
@@ -178,15 +265,27 @@ class VehicleController extends Controller
             'brand' => ['required', 'string', 'max:100'],
             'model' => ['required', 'string', 'max:100'],
             'year' => ['required', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
+            'price' => ['required', 'numeric', 'min:0'],
+            'description' => ['nullable', 'string'],
+            'body_type' => ['nullable', 'string', 'in:Sedan,Hatchback,MPV,SUV,Van,Pickup'],
+            'fuel_type' => ['nullable', 'string', 'in:Gasoline,Diesel,Hybrid,Electric'],
+            'transmission' => ['nullable', 'string', 'in:Manual,Automatic,CVT'],
+            'color' => ['nullable', 'string', 'max:50'],
+            'seating_capacity' => ['nullable', 'integer', 'min:1', 'max:50'],
             'is_active' => ['boolean'],
+            'is_featured' => ['boolean'],
             'operator_locations' => ['nullable', 'exists:operator__locations,id'],
             'coding_day' => ['nullable', 'string', 'max:20'],
+            'features' => ['nullable', 'array'],
+            'features.*' => ['string'],
+            'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
+            'reviews' => ['nullable', 'integer', 'min:0'],
             'new_attachments' => ['nullable', 'array'],
             'new_attachments.*' => ['file', 'mimes:jpeg,jpg,png,pdf', 'max:5120'],
             'new_attachment_types' => ['nullable', 'array'],
-            'new_attachment_types.*' => ['string', 'in:or,cr,receipt,inspection,insurance,other'],
+            'new_attachment_types.*' => ['string', 'in:or,cr,insurance,vehicle_photo,other'],
             'delete_attachments' => ['nullable', 'array'],
-            'delete_attachments.*' => ['integer', 'exists:vehicle__attachments,id'],
+            'delete_attachments.*' => ['integer', 'exists:vehicle_attachments,id'],
         ]);
 
         DB::beginTransaction();
@@ -199,19 +298,37 @@ class VehicleController extends Controller
                 'brand' => $validated['brand'],
                 'model' => $validated['model'],
                 'year' => $validated['year'],
+                'price' => $validated['price'],
+                'description' => $validated['description'] ?? $vehicle->description,
+                'body_type' => $validated['body_type'] ?? $vehicle->body_type,
+                'fuel_type' => $validated['fuel_type'] ?? $vehicle->fuel_type,
+                'transmission' => $validated['transmission'] ?? $vehicle->transmission,
+                'color' => $validated['color'] ?? $vehicle->color,
+                'seating_capacity' => $validated['seating_capacity'] ?? $vehicle->seating_capacity,
                 'is_active' => $validated['is_active'] ?? $vehicle->is_active,
+                'is_featured' => $validated['is_featured'] ?? $vehicle->is_featured,
                 'operator_locations' => $validated['operator_locations'] ?? $vehicle->operator_locations,
                 'coding_day' => $validated['coding_day'] ?? $vehicle->coding_day,
+                'features' => !empty($validated['features']) ? json_encode($validated['features']) : $vehicle->features,
+                'rating' => $validated['rating'] ?? $vehicle->rating,
+                'reviews' => $validated['reviews'] ?? $vehicle->reviews,
             ]);
 
             // Handle new attachments
             if ($request->hasFile('new_attachments')) {
                 foreach ($request->file('new_attachments') as $index => $file) {
-                    $path = $file->store('vehicle-attachments', 'public');
+                    $attachmentType = $request->new_attachment_types[$index] ?? 'other';
+                    
+                    // Determine storage path based on attachment type
+                    if ($attachmentType === 'vehicle_photo') {
+                        $path = $file->store('vehicles', 'public');
+                    } else {
+                        $path = $file->store('attachments', 'public');
+                    }
                     
                     Vehicle_Attachment::create([
                         'vehicle_id' => $vehicle->id,
-                        'attachment_type' => $request->new_attachment_types[$index] ?? 'other',
+                        'attachment_type' => $attachmentType,
                         'attachment_url' => $path,
                     ]);
                 }
@@ -279,7 +396,7 @@ class VehicleController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('vehicles.operator-index')
+                ->route('vehicles.operator.list')
                 ->with('success', 'Vehicle deleted successfully.');
 
         } catch (\Exception $e) {

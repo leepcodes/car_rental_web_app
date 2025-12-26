@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('vehicle_attachments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('vehicle_id')->constrained('vehicles')->onDelete('cascade');
-            $table->string('attachment_type');
+            $table->enum('attachment_type', ['or', 'cr', 'insurance', 'vehicle_photo', 'other']);
             $table->string('attachment_url');
             $table->timestamps();
         });

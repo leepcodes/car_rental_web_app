@@ -6,12 +6,7 @@ import AppHeader from '@/pages/clientSide/components/AppHeader.vue';
 import VehicleCard from '@/pages/clientSide/components/VehicleCard.vue';
 import SearchFilters from '@/pages/clientSide/components/SearchForm.vue';
 import { Button } from '@/components/ui/button';
-withDefaults(
-  defineProps<{
-    canRegister?: boolean;
-  }>(),
-  { canRegister: true }
-);
+
 interface Vehicle {
   id: number;
   name: string;
@@ -30,149 +25,29 @@ interface Vehicle {
   featured: boolean;
 }
 
+interface Filters {
+  body_type?: string;
+  fuel_type?: string;
+  transmission?: string;
+  seating_capacity?: number;
+  search?: string;
+  [key: string]: string | number | undefined;
+}
+
+interface Props {
+  canRegister?: boolean;
+  vehicles: Vehicle[];
+  filters?: Filters;
+}
+
+const props = withDefaults(defineProps<Props>(), { 
+  canRegister: true,
+  vehicles: () => [],
+  filters: () => ({})
+});
+
 const favorites = ref<Set<number>>(new Set());
 const sortBy = ref('featured');
-const filterType = ref('all');
-const searchQuery = ref('');
-
-const vehicles = ref<Vehicle[]>([
-  {
-    id: 1,
-    name: 'Toyota Camry 2023',
-    type: 'Sedan',
-    image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&h=400&fit=crop',
-    price: 45,
-    location: 'Quezon City',
-    passengers: 5,
-    transmission: 'Automatic',
-    fuel: 'Gasoline',
-    rating: 4.8,
-    reviews: 127,
-    host: 'Premium Rentals',
-    hostVerified: true,
-    available: true,
-    featured: true
-  },
-  {
-    id: 2,
-    name: 'Honda CR-V 2022',
-    type: 'SUV',
-    image: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=600&h=400&fit=crop',
-    price: 3000,
-    location: 'Makati',
-    passengers: 7,
-    transmission: 'Automatic',
-    fuel: 'Gasoline',
-    rating: 4.9,
-    reviews: 89,
-    host: 'Elite Cars',
-    hostVerified: true,
-    available: true,
-    featured: true
-  },
-  {
-    id: 3,
-    name: 'Toyota Wigo 2021',
-    type: 'Hatchback',
-    image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=600&h=400&fit=crop',
-    price: 1500,
-    location: 'Manila',
-    passengers: 5,
-    transmission: 'Manual',
-    fuel: 'Gasoline',
-    rating: 4.6,
-    reviews: 203,
-    host: 'Budget Wheels',
-    hostVerified: false,
-    available: true,
-    featured: false
-  },
-  {
-    id: 4,
-    name: 'Toyota Innova 2023',
-    type: 'MPV',
-    image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=600&h=400&fit=crop',
-    price: 2000,
-    location: 'Pasig',
-    passengers: 8,
-    transmission: 'Automatic',
-    fuel: 'Diesel',
-    rating: 4.7,
-    reviews: 156,
-    host: 'Family Rides',
-    hostVerified: true,
-    available: false,
-    featured: false
-  },
-  {
-    id: 5,
-    name: 'Mitsubishi L300 2020',
-    type: 'Van',
-    image: 'https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=600&h=400&fit=crop',
-    price: 3500,
-    location: 'Mandaluyong',
-    passengers: 12,
-    transmission: 'Manual',
-    fuel: 'Diesel',
-    rating: 4.5,
-    reviews: 78,
-    host: 'Group Transport',
-    hostVerified: true,
-    available: true,
-    featured: false
-  },
-  {
-    id: 6,
-    name: 'Ford Ranger Wildtrak',
-    type: 'Pickup',
-    image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&h=400&fit=crop',
-    price: 3500,
-    location: 'Taguig',
-    passengers: 5,
-    transmission: 'Automatic',
-    fuel: 'Diesel',
-    rating: 4.9,
-    reviews: 94,
-    host: 'Adventure Rentals',
-    hostVerified: true,
-    available: true,
-    featured: true
-  },
-  {
-    id: 7,
-    name: 'Hyundai Accent 2022',
-    type: 'Sedan',
-    image: 'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=600&h=400&fit=crop',
-    price: 2000,
-    location: 'Quezon City',
-    passengers: 5,
-    transmission: 'Automatic',
-    fuel: 'Gasoline',
-    rating: 4.7,
-    reviews: 112,
-    host: 'City Drives',
-    hostVerified: true,
-    available: true,
-    featured: false
-  },
-  {
-    id: 8,
-    name: 'Mazda CX-5 2023',
-    type: 'SUV',
-    image: 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=600&h=400&fit=crop',
-    price: 3000,
-    location: 'BGC',
-    passengers: 5,
-    transmission: 'Automatic',
-    fuel: 'Gasoline',
-    rating: 4.8,
-    reviews: 145,
-    host: 'Luxury Fleet',
-    hostVerified: true,
-    available: true,
-    featured: true
-  }
-]);
 
 const toggleFavorite = (id: number) => {
   if (favorites.value.has(id)) {
@@ -183,35 +58,17 @@ const toggleFavorite = (id: number) => {
 };
 
 const handleBook = (id: number) => {
-  const vehicle = vehicles.value.find(v => v.id === id);
+  const vehicle = props.vehicles.find(v => v.id === id);
   console.log('Booking vehicle:', vehicle?.name);
   // Navigate to OTP verification page
   router.visit(`/client/booking/${id}`);
 };
 
-const handleSearch = (query: string) => {
-  searchQuery.value = query;
-};
-
-const filteredAndSortedVehicles = computed(() => {
-  let result = vehicles.value;
-
-  // Filter by type
-  if (filterType.value !== 'all') {
-    result = result.filter(v => v.type.toLowerCase() === filterType.value.toLowerCase());
-  }
-
-  // Filter by search query
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(v => 
-      v.name.toLowerCase().includes(query) || 
-      v.location.toLowerCase().includes(query)
-    );
-  }
+const sortedVehicles = computed(() => {
+  let result = [...props.vehicles];
 
   // Sort
-  result = [...result].sort((a, b) => {
+  result.sort((a, b) => {
     switch(sortBy.value) {
       case 'price-low':
         return a.price - b.price;
@@ -247,24 +104,63 @@ const filteredAndSortedVehicles = computed(() => {
           </div>
 
           <!-- Search and Filters -->
-          <SearchFilters 
-            v-model:filter-type="filterType"
-            v-model:sort-by="sortBy"
-            @search="handleSearch"
-          />
+          <SearchFilters :filters="filters" />
         </div>
       </div>
     </div>
 
     <!-- Listings Grid -->
     <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
-      <div v-if="filteredAndSortedVehicles.length === 0" class="text-center py-12">
+      <!-- Active Filters Display -->
+      <div v-if="filters && Object.keys(filters).some(key => filters[key])" class="mb-6">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-sm font-medium text-neutral-600">Active Filters:</span>
+          <span v-if="filters.body_type" class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm">
+            Body: {{ filters.body_type }}
+          </span>
+          <span v-if="filters.fuel_type" class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm">
+            Fuel: {{ filters.fuel_type }}
+          </span>
+          <span v-if="filters.transmission" class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm">
+            Trans: {{ filters.transmission }}
+          </span>
+          <span v-if="filters.seating_capacity" class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm">
+            Seats: {{ filters.seating_capacity }}
+          </span>
+          <span v-if="filters.search" class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-neutral-700 rounded-full text-sm">
+            Search: "{{ filters.search }}"
+          </span>
+        </div>
+      </div>
+
+      <!-- Sort Options -->
+      <div class="flex justify-between items-center mb-6">
+        <p class="text-sm text-neutral-600">
+          Showing {{ sortedVehicles.length }} {{ sortedVehicles.length === 1 ? 'vehicle' : 'vehicles' }}
+        </p>
+        <div class="flex items-center gap-2">
+          <label for="sort" class="text-sm text-neutral-600">Sort by:</label>
+          <select
+            id="sort"
+            v-model="sortBy"
+            class="px-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400"
+          >
+            <option value="featured">Featured</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="rating">Highest Rated</option>
+          </select>
+        </div>
+      </div>
+
+      <div v-if="sortedVehicles.length === 0" class="text-center py-12">
         <p class="text-neutral-600 text-lg">No vehicles found matching your criteria.</p>
+        <p class="text-neutral-500 text-sm mt-2">Try adjusting your filters or search terms.</p>
       </div>
 
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <VehicleCard
-          v-for="vehicle in filteredAndSortedVehicles"
+          v-for="vehicle in sortedVehicles"
           :key="vehicle.id"
           :vehicle="vehicle"
           :is-favorite="favorites.has(vehicle.id)"
@@ -274,7 +170,7 @@ const filteredAndSortedVehicles = computed(() => {
       </div>
 
       <!-- Load More -->
-      <div class="mt-12 text-center">
+      <div v-if="sortedVehicles.length > 0" class="mt-12 text-center">
         <Button variant="outline" size="lg">
           Load More Vehicles
         </Button>
