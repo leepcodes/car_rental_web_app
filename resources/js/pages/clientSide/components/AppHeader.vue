@@ -46,17 +46,25 @@ const isOperator = computed(() => {
   return user.value?.user_type === 'operator';
 });
 
+// Booking link based on user type
+const bookingLink = computed(() => {
+  if (isClient.value) {
+    return '/client/booking';
+  }
+  return '/booking';
+});
+
 // Navigation links - filtered based on user type
 const navLinks = computed(() => {
   const baseLinks = [
-    { href: '/booking', label: 'Book' },
+    { href: bookingLink.value, label: 'Book' },
     { href: '/about', label: 'About' },
     { href: '/contact', label: 'Contact' },
   ];
 
   // If user is an operator, remove the "Book" link
   if (isOperator.value) {
-    return baseLinks.filter(link => link.href !== '/booking');
+    return baseLinks.filter(link => link.label !== 'Book');
   }
 
   return baseLinks;
@@ -90,6 +98,7 @@ const dashboardLabel = computed(() => {
   return 'Dashboard';
 });
 </script>
+
 
 <template>
   <header class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">

@@ -22,552 +22,62 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-const props = withDefaults(
-  defineProps<{
-    canRegister?: boolean;
-    vehicleId?: number;
-  }>(),
-  { 
-    canRegister: true,
-    vehicleId: 1
-  }
-);
+interface Host {
+  name: string;
+  verified: boolean;
+  rating: number;
+  totalVehicles: number;
+  responseTime: string;
+  responseRate: number;
+}
 
-// Mock vehicle data - in real app, fetch based on vehicleId
-// Using computed to make it reactive to vehicleId changes
-const vehicle = computed(() => {
-  // Mock data for different vehicles based on ID
-  const vehicleData: Record<number, any> = {
-    1: {
-      id: 1,
-      name: 'Toyota Camry 2023',
-      type: 'Sedan',
-      images: [
-        'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop'
-      ],
-      price: 2500,
-      location: 'Quezon City',
-      passengers: 5,
-      transmission: 'Automatic',
-      fuel: 'Gasoline',
-      rating: 4.8,
-      reviews: 127,
-      host: {
-        name: 'Premium Rentals',
-        verified: true,
-        rating: 4.9,
-        totalVehicles: 12,
-        responseTime: '1 hour',
-        responseRate: 98
-      },
-      available: true,
-      featured: true,
-      description: 'Experience luxury and comfort with this pristine 2023 Toyota Camry. Perfect for business trips, family outings, or exploring Metro Manila in style. This sedan offers the perfect blend of reliability, comfort, and modern features.',
-      features: [
-        'Air Conditioning',
-        'Bluetooth Audio',
-        'USB Charging Ports',
-        'Backup Camera',
-        'Cruise Control',
-        'Power Windows',
-        'Premium Sound System',
-        'Leather Seats',
-        'GPS Navigation',
-        'Keyless Entry'
-      ],
-      specifications: {
-        year: 2023,
-        make: 'Toyota',
-        model: 'Camry',
-        color: 'Pearl White',
-        mileage: '15,000 km',
-        engine: '2.5L 4-Cylinder',
-        seats: 5,
-        doors: 4,
-        plateNumber: 'ABC 1234'
-      },
-      rules: [
-        'Valid driver\'s license required',
-        'Minimum age: 21 years old',
-        'Security deposit: ₱5,000',
-        'Fuel policy: Return with same fuel level',
-        'No smoking inside the vehicle',
-        'Pets allowed with prior approval',
-        'Extra driver: ₱500/day'
-      ],
-      insurance: {
-        included: true,
-        coverage: 'Comprehensive insurance included',
-        details: 'Covers collision damage, theft, and third-party liability'
-      }
-    },
-    2: {
-      id: 2,
-      name: 'Honda CR-V 2022',
-      type: 'SUV',
-      images: [
-        'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop'
-      ],
-      price: 3000,
-      location: 'Makati',
-      passengers: 7,
-      transmission: 'Automatic',
-      fuel: 'Gasoline',
-      rating: 4.9,
-      reviews: 89,
-      host: {
-        name: 'Elite Cars',
-        verified: true,
-        rating: 4.9,
-        totalVehicles: 15,
-        responseTime: '30 mins',
-        responseRate: 99
-      },
-      available: true,
-      featured: true,
-      description: 'Spacious and reliable Honda CR-V perfect for family adventures or group travel. This SUV combines comfort, safety, and versatility, making it ideal for both city driving and weekend getaways.',
-      features: [
-        'All-Wheel Drive',
-        'Panoramic Sunroof',
-        'Blind Spot Monitoring',
-        'Lane Keeping Assist',
-        'Adaptive Cruise Control',
-        'Heated Seats',
-        'Apple CarPlay',
-        'Android Auto',
-        'Power Liftgate',
-        'Premium Audio System'
-      ],
-      specifications: {
-        year: 2022,
-        make: 'Honda',
-        model: 'CR-V',
-        color: 'Crystal Black Pearl',
-        mileage: '22,000 km',
-        engine: '1.5L Turbo',
-        seats: 7,
-        doors: 4,
-        plateNumber: 'XYZ 5678'
-      },
-      rules: [
-        'Valid driver\'s license required',
-        'Minimum age: 23 years old',
-        'Security deposit: ₱8,000',
-        'Fuel policy: Return with same fuel level',
-        'No smoking inside the vehicle',
-        'Pets allowed with additional fee',
-        'Extra driver: ₱600/day'
-      ],
-      insurance: {
-        included: true,
-        coverage: 'Full comprehensive insurance',
-        details: 'Covers collision damage, theft, third-party liability, and natural disasters'
-      }
-    },
-    3: {
-      id: 3,
-      name: 'Toyota Wigo 2021',
-      type: 'Hatchback',
-      images: [
-        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop'
-      ],
-      price: 1500,
-      location: 'Manila',
-      passengers: 5,
-      transmission: 'Manual',
-      fuel: 'Gasoline',
-      rating: 4.6,
-      reviews: 203,
-      host: {
-        name: 'Budget Wheels',
-        verified: false,
-        rating: 4.5,
-        totalVehicles: 8,
-        responseTime: '2 hours',
-        responseRate: 85
-      },
-      available: true,
-      featured: false,
-      description: 'Compact and fuel-efficient Toyota Wigo, perfect for city navigation and budget-conscious travelers. Easy to park and maneuver through Manila traffic while maintaining excellent fuel economy.',
-      features: [
-        'Air Conditioning',
-        'Power Steering',
-        'ABS Brakes',
-        'Airbags',
-        'Central Locking',
-        'USB Port',
-        'Aux Input',
-        'Rear Parking Sensors'
-      ],
-      specifications: {
-        year: 2021,
-        make: 'Toyota',
-        model: 'Wigo',
-        color: 'Red',
-        mileage: '45,000 km',
-        engine: '1.0L 3-Cylinder',
-        seats: 5,
-        doors: 4,
-        plateNumber: 'MNO 9012'
-      },
-      rules: [
-        'Valid driver\'s license required',
-        'Minimum age: 21 years old',
-        'Security deposit: ₱3,000',
-        'Fuel policy: Return with same fuel level',
-        'No smoking inside the vehicle',
-        'Pets not allowed',
-        'Extra driver: ₱300/day'
-      ],
-      insurance: {
-        included: true,
-        coverage: 'Basic insurance included',
-        details: 'Covers third-party liability and theft'
-      }
-    },
-    4: {
-      id: 4,
-      name: 'Toyota Innova 2023',
-      type: 'MPV',
-      images: [
-        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&h=600&fit=crop'
-      ],
-      price: 2000,
-      location: 'Pasig',
-      passengers: 8,
-      transmission: 'Automatic',
-      fuel: 'Diesel',
-      rating: 4.7,
-      reviews: 156,
-      host: {
-        name: 'Family Rides',
-        verified: true,
-        rating: 4.8,
-        totalVehicles: 10,
-        responseTime: '45 mins',
-        responseRate: 95
-      },
-      available: false,
-      featured: false,
-      description: 'Versatile and spacious Toyota Innova, ideal for family trips and group outings. With seating for 8 passengers and ample cargo space, this MPV is perfect for longer journeys and provincial tours.',
-      features: [
-        'Captain Seats',
-        'Rear AC',
-        'Third Row Seats',
-        'Foldable Seats',
-        'Touchscreen Display',
-        'Reverse Camera',
-        'Roof Rails',
-        'Tinted Windows',
-        'Alloy Wheels'
-      ],
-      specifications: {
-        year: 2023,
-        make: 'Toyota',
-        model: 'Innova',
-        color: 'Silver',
-        mileage: '18,000 km',
-        engine: '2.4L Diesel',
-        seats: 8,
-        doors: 4,
-        plateNumber: 'DEF 3456'
-      },
-      rules: [
-        'Valid driver\'s license required',
-        'Minimum age: 22 years old',
-        'Security deposit: ₱6,000',
-        'Fuel policy: Return with same fuel level',
-        'No smoking inside the vehicle',
-        'Pets allowed in cargo area only',
-        'Extra driver: ₱400/day'
-      ],
-      insurance: {
-        included: true,
-        coverage: 'Comprehensive insurance included',
-        details: 'Covers collision damage, theft, and third-party liability'
-      }
-    },
-    5: {
-      id: 5,
-      name: 'Mitsubishi L300 2020',
-      type: 'Van',
-      images: [
-        'https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop'
-      ],
-      price: 3500,
-      location: 'Mandaluyong',
-      passengers: 12,
-      transmission: 'Manual',
-      fuel: 'Diesel',
-      rating: 4.5,
-      reviews: 78,
-      host: {
-        name: 'Group Transport',
-        verified: true,
-        rating: 4.7,
-        totalVehicles: 6,
-        responseTime: '1.5 hours',
-        responseRate: 92
-      },
-      available: true,
-      featured: false,
-      description: 'Spacious Mitsubishi L300 van perfect for large groups, team outings, or events. With seating for up to 12 passengers, this reliable workhorse is ideal for corporate trips and group adventures.',
-      features: [
-        'Air Conditioning',
-        'Power Steering',
-        'Sliding Doors',
-        'High Roof',
-        'Rear Storage',
-        'Durable Interior',
-        'Sound System',
-        'LED Lights'
-      ],
-      specifications: {
-        year: 2020,
-        make: 'Mitsubishi',
-        model: 'L300',
-        color: 'White',
-        mileage: '65,000 km',
-        engine: '2.2L Diesel',
-        seats: 12,
-        doors: 4,
-        plateNumber: 'GHI 7890'
-      },
-      rules: [
-        'Valid driver\'s license required',
-        'Minimum age: 25 years old',
-        'Security deposit: ₱10,000',
-        'Fuel policy: Return with same fuel level',
-        'No smoking inside the vehicle',
-        'Pets not allowed',
-        'Extra driver: ₱700/day',
-        'Commercial use requires special permit'
-      ],
-      insurance: {
-        included: true,
-        coverage: 'Commercial insurance included',
-        details: 'Covers collision damage, theft, third-party liability, and passenger accident insurance'
-      }
-    },
-    6: {
-      id: 6,
-      name: 'Ford Ranger Wildtrak',
-      type: 'Pickup',
-      images: [
-        'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop'
-      ],
-      price: 3500,
-      location: 'Taguig',
-      passengers: 5,
-      transmission: 'Automatic',
-      fuel: 'Diesel',
-      rating: 4.9,
-      reviews: 94,
-      host: {
-        name: 'Adventure Rentals',
-        verified: true,
-        rating: 4.9,
-        totalVehicles: 8,
-        responseTime: '30 mins',
-        responseRate: 98
-      },
-      available: true,
-      featured: true,
-      description: 'Rugged and powerful Ford Ranger Wildtrak, built for adventure and versatility. Perfect for off-road adventures, hauling cargo, or making a bold statement on city streets. Premium features and excellent performance.',
-      features: [
-        '4x4 Drive',
-        'Off-Road Mode',
-        'Hill Descent Control',
-        'Leather Seats',
-        'Premium Sound System',
-        'Tonneau Cover',
-        'LED Headlights',
-        'Automatic Parking',
-        'SYNC 3 Infotainment',
-        'Towing Package'
-      ],
-      specifications: {
-        year: 2023,
-        make: 'Ford',
-        model: 'Ranger Wildtrak',
-        color: 'Meteor Grey',
-        mileage: '12,000 km',
-        engine: '2.0L Bi-Turbo Diesel',
-        seats: 5,
-        doors: 4,
-        plateNumber: 'JKL 2345'
-      },
-      rules: [
-        'Valid driver\'s license required',
-        'Minimum age: 25 years old',
-        'Security deposit: ₱15,000',
-        'Fuel policy: Return with same fuel level',
-        'No smoking inside the vehicle',
-        'Off-road use requires prior approval',
-        'Extra driver: ₱800/day',
-        'Towing requires special agreement'
-      ],
-      insurance: {
-        included: true,
-        coverage: 'Premium comprehensive insurance',
-        details: 'Covers collision damage, theft, third-party liability, off-road accidents, and towing damage'
-      }
-    },
-    7: {
-      id: 7,
-      name: 'Hyundai Accent 2022',
-      type: 'Sedan',
-      images: [
-        'https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop'
-      ],
-      price: 2000,
-      location: 'Quezon City',
-      passengers: 5,
-      transmission: 'Automatic',
-      fuel: 'Gasoline',
-      rating: 4.7,
-      reviews: 112,
-      host: {
-        name: 'City Drives',
-        verified: true,
-        rating: 4.8,
-        totalVehicles: 14,
-        responseTime: '1 hour',
-        responseRate: 96
-      },
-      available: true,
-      featured: false,
-      description: 'Modern and efficient Hyundai Accent, perfect for daily commuting and city exploration. This sedan offers excellent fuel economy, comfortable seating, and modern tech features at an affordable price.',
-      features: [
-        'Touchscreen Display',
-        'Apple CarPlay',
-        'Android Auto',
-        'Rear Camera',
-        'Cruise Control',
-        'Keyless Entry',
-        'Push Start Button',
-        'Bluetooth',
-        'USB Ports',
-        'Climate Control'
-      ],
-      specifications: {
-        year: 2022,
-        make: 'Hyundai',
-        model: 'Accent',
-        color: 'Polar White',
-        mileage: '28,000 km',
-        engine: '1.4L 4-Cylinder',
-        seats: 5,
-        doors: 4,
-        plateNumber: 'PQR 6789'
-      },
-      rules: [
-        'Valid driver\'s license required',
-        'Minimum age: 21 years old',
-        'Security deposit: ₱5,000',
-        'Fuel policy: Return with same fuel level',
-        'No smoking inside the vehicle',
-        'Pets allowed with carrier',
-        'Extra driver: ₱400/day'
-      ],
-      insurance: {
-        included: true,
-        coverage: 'Comprehensive insurance included',
-        details: 'Covers collision damage, theft, and third-party liability'
-      }
-    },
-    8: {
-      id: 8,
-      name: 'Mazda CX-5 2023',
-      type: 'SUV',
-      images: [
-        'https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop'
-      ],
-      price: 3000,
-      location: 'BGC',
-      passengers: 5,
-      transmission: 'Automatic',
-      fuel: 'Gasoline',
-      rating: 4.8,
-      reviews: 145,
-      host: {
-        name: 'Luxury Fleet',
-        verified: true,
-        rating: 4.9,
-        totalVehicles: 18,
-        responseTime: '20 mins',
-        responseRate: 99
-      },
-      available: true,
-      featured: true,
-      description: 'Premium Mazda CX-5 with sophisticated design and cutting-edge technology. Experience the perfect combination of luxury, performance, and practicality. Ideal for business professionals and those who appreciate refined driving dynamics.',
-      features: [
-        'All-Wheel Drive',
-        'Bose Premium Audio',
-        'Head-Up Display',
-        '360-Degree Camera',
-        'Adaptive LED Headlights',
-        'Heated & Ventilated Seats',
-        'Power Tailgate',
-        'Wireless Charging',
-        'Traffic Jam Assist',
-        'Premium Leather Interior'
-      ],
-      specifications: {
-        year: 2023,
-        make: 'Mazda',
-        model: 'CX-5',
-        color: 'Soul Red Crystal',
-        mileage: '8,000 km',
-        engine: '2.5L Turbo',
-        seats: 5,
-        doors: 4,
-        plateNumber: 'STU 0123'
-      },
-      rules: [
-        'Valid driver\'s license required',
-        'Minimum age: 25 years old',
-        'Security deposit: ₱10,000',
-        'Fuel policy: Return with same fuel level',
-        'No smoking inside the vehicle',
-        'Pets not allowed',
-        'Extra driver: ₱700/day',
-        'Premium fuel required'
-      ],
-      insurance: {
-        included: true,
-        coverage: 'Premium comprehensive insurance',
-        details: 'Covers collision damage, theft, third-party liability, natural disasters, and roadside assistance'
-      }
-    }
-  };
+interface Specifications {
+  year: number;
+  make: string;
+  model: string;
+  color: string;
+  mileage: string;
+  engine: string;
+  seats: number;
+  doors: number;
+  plateNumber: string;
+}
 
-  // Return the specific vehicle data based on vehicleId, or default to vehicle 1
-  return vehicleData[props.vehicleId] || vehicleData[1];
+interface Insurance {
+  included: boolean;
+  coverage: string;
+  details: string;
+}
+
+interface Vehicle {
+  id: number;
+  name: string;
+  type: string;
+  images: string[];
+  price: number;
+  location: string;
+  passengers: number;
+  transmission: string;
+  fuel: string;
+  rating: number;
+  reviews: number;
+  host: Host;
+  available: boolean;
+  featured: boolean;
+  description: string;
+  features: string[];
+  specifications: Specifications;
+  rules: string[];
+  insurance: Insurance;
+}
+
+interface Props {
+  canRegister?: boolean;
+  vehicle: Vehicle;
+}
+
+const props = withDefaults(defineProps<Props>(), { 
+  canRegister: true
 });
 
 const currentImageIndex = ref(0);
@@ -587,7 +97,7 @@ const totalDays = computed(() => {
 });
 
 const totalPrice = computed(() => {
-  return vehicle.value.price * totalDays.value;
+  return props.vehicle.price * totalDays.value;
 });
 
 const selectImage = (index: number) => {
@@ -609,11 +119,11 @@ const handleBooking = () => {
   }
   // Navigate to booking form with all details as query parameters
   const params = new URLSearchParams({
-    vehicleId: vehicle.value.id.toString(),
-    vehicleName: vehicle.value.name,
-    vehicleImage: vehicle.value.images[0],
-    vehicleType: vehicle.value.type,
-    pricePerDay: vehicle.value.price.toString(),
+    vehicleId: props.vehicle.id.toString(),
+    vehicleName: props.vehicle.name,
+    vehicleImage: props.vehicle.images[0] || '',
+    vehicleType: props.vehicle.type,
+    pricePerDay: props.vehicle.price.toString(),
     pickupDate: selectedPickupDate.value,
     returnDate: selectedReturnDate.value,
     pickupTime: selectedPickupTime.value,
@@ -628,15 +138,15 @@ const handleBooking = () => {
 };
 
 const contactHost = () => {
-  console.log('Contacting host:', vehicle.value.host.name);
+  console.log('Contacting host:', props.vehicle.host.name);
   // Open messaging modal or navigate to messaging page
 };
 
 const shareVehicle = () => {
   if (navigator.share) {
     navigator.share({
-      title: vehicle.value.name,
-      text: `Check out this ${vehicle.value.name} available for rent`,
+      title: props.vehicle.name,
+      text: `Check out this ${props.vehicle.name} available for rent`,
       url: window.location.href
     });
   } else {
@@ -675,10 +185,14 @@ const shareVehicle = () => {
               <!-- Main Image -->
               <div class="aspect-video overflow-hidden bg-neutral-200">
                 <img
+                  v-if="vehicle.images && vehicle.images.length > 0"
                   :src="vehicle.images[currentImageIndex]"
                   :alt="vehicle.name"
                   class="w-full h-full object-cover"
                 />
+                <div v-else class="w-full h-full flex items-center justify-center text-neutral-400">
+                  No image available
+                </div>
               </div>
 
               <!-- Badges Overlay -->
@@ -713,7 +227,7 @@ const shareVehicle = () => {
               </div>
 
               <!-- Thumbnail Gallery -->
-              <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/40 backdrop-blur-sm rounded-lg p-2">
+              <div v-if="vehicle.images && vehicle.images.length > 1" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/40 backdrop-blur-sm rounded-lg p-2">
                 <button
                   v-for="(image, index) in vehicle.images"
                   :key="index"
