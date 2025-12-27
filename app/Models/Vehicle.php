@@ -33,6 +33,7 @@ class Vehicle extends Model
         protected $casts = [
         'license_plate' => 'string',
         'is_active' => 'boolean',
+        'features' => 'array',
     ];
     public function operator()
     {

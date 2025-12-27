@@ -1,7 +1,7 @@
 
-// components/VehicleCard.vue
 <script setup lang="ts">
-import { Heart, Star, MapPin, Users, Settings, Fuel, Car } from 'lucide-react';
+import { computed } from 'vue';
+import { Heart, Star, MapPin, Users, Settings, Fuel, Car } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,14 +12,14 @@ interface Vehicle {
   name: string;
   type: string;
   image: string;
-  price: number;
-  location: string;
-  passengers: number;
-  transmission: string;
-  fuel: string;
-  rating: number;
-  reviews: number;
-  host: string;
+  price: number | { amount?: number; value?: number } | any;
+  location: string | { name: string } | any;
+  passengers: number | { count?: number; capacity?: number } | any;
+  transmission: string | { type?: string; name?: string } | any;
+  fuel: string | { type?: string; name?: string } | any;
+  rating: number | { score?: number; average?: number; value?: number } | any;
+  reviews: number | { count?: number; total?: number } | any;
+  host: string | { name: string; verified?: boolean } | any;
   hostVerified: boolean;
   available: boolean;
   featured: boolean;
@@ -35,10 +35,68 @@ const emit = defineEmits<{
   toggleFavorite: [id: number];
   book: [id: number];
 }>();
+
+// Helper function to safely extract numeric values
+const extractNumber = (value: any, defaultValue: number = 0): number => {
+  if (typeof value === 'number') return value;
+  if (value && typeof value === 'object') {
+    // Try common property names
+    return value.value ?? value.amount ?? value.count ?? value.total ?? value.score ?? value.average ?? value.capacity ?? defaultValue;
+  }
+  return defaultValue;
+};
+
+// Helper function to safely extract string values
+const extractString = (value: any, defaultValue: string = ''): string => {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object') {
+    // Try common property names
+    return value.name ?? value.type ?? value.value ?? defaultValue;
+  }
+  return defaultValue;
+};
+
+// Computed properties to handle both flat and nested data structures
+const vehicleLocation = computed(() => {
+  if (typeof props.vehicle.location === 'string') {
+    return props.vehicle.location;
+  }
+  if (props.vehicle.location && typeof props.vehicle.location === 'object' && 'name' in props.vehicle.location) {
+    return props.vehicle.location.name;
+  }
+  return 'Location Not Set';
+});
+
+const vehicleHost = computed(() => {
+  if (typeof props.vehicle.host === 'string') {
+    return props.vehicle.host;
+  }
+  if (props.vehicle.host && typeof props.vehicle.host === 'object' && 'name' in props.vehicle.host) {
+    return props.vehicle.host.name;
+  }
+  return 'Unknown Host';
+});
+
+const isHostVerified = computed(() => {
+  if (typeof props.vehicle.hostVerified === 'boolean') {
+    return props.vehicle.hostVerified;
+  }
+  if (props.vehicle.host && typeof props.vehicle.host === 'object' && 'verified' in props.vehicle.host) {
+    return props.vehicle.host.verified;
+  }
+  return false;
+});
+
+const vehiclePrice = computed(() => extractNumber(props.vehicle.price, 0));
+const vehicleRating = computed(() => extractNumber(props.vehicle.rating, 0));
+const vehicleReviews = computed(() => extractNumber(props.vehicle.reviews, 0));
+const vehiclePassengers = computed(() => extractNumber(props.vehicle.passengers, 0));
+const vehicleTransmission = computed(() => extractString(props.vehicle.transmission, 'Manual'));
+const vehicleFuel = computed(() => extractString(props.vehicle.fuel, 'Gasoline'));
 </script>
 
 <template>
-  <Card class="overflow-hidden hover:shadow-xl transition-shadow group">
+  <Card class="overflow-hidden hover:shadow-xl transition-shadow group bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 rounded-lg">
     <!-- Image Section -->
     <Link :href="`/client/booking/${vehicle.id}`" class="block">
       <div class="relative aspect-[4/3] overflow-hidden">
@@ -86,10 +144,10 @@ const emit = defineEmits<{
       <CardHeader class="pb-3">
         <div class="flex items-start justify-between gap-2">
           <div class="flex-1 min-w-0">
-            <CardTitle class="text-lg truncate">{{ vehicle.name }}</CardTitle>
-            <CardDescription class="flex items-center gap-1 mt-1">
+            <CardTitle class="text-lg truncate text-white">{{ vehicle.name }}</CardTitle>
+            <CardDescription class="flex items-center gap-1 mt-1 text-neutral-300">
               <MapPin class="w-3 h-3" />
-              {{ vehicle.location }}
+              {{ vehicleLocation }}
             </CardDescription>
           </div>
         </div>
@@ -98,39 +156,39 @@ const emit = defineEmits<{
         <div class="flex items-center gap-2 mt-2">
           <div class="flex items-center gap-1">
             <Star class="w-4 h-4 fill-amber-400 text-amber-400" />
-            <span class="font-semibold text-sm">{{ vehicle.rating }}</span>
+            <span class="font-semibold text-sm text-white">{{ vehicleRating.toFixed(1) }}</span>
           </div>
-          <span class="text-xs text-neutral-500">
-            ({{ vehicle.reviews }} reviews)
+          <span class="text-xs text-neutral-300">
+            ({{ vehicleReviews }} reviews)
           </span>
         </div>
       </CardHeader>
 
       <CardContent class="pb-3">
         <!-- Host Info -->
-        <div class="flex items-center gap-2 mb-3 pb-3 border-b">
-          <div class="w-8 h-8 rounded-full bg-neutral-200 flex items-center justify-center">
-            <Car class="w-4 h-4 text-neutral-600" />
+        <div class="flex items-center gap-2 mb-3 pb-3 border-b border-white/20">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <Car class="w-4 h-4 text-white" />
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium truncate">{{ vehicle.host }}</p>
-            <p v-if="vehicle.hostVerified" class="text-xs text-green-600">✓ Verified Host</p>
+            <p class="text-sm font-medium truncate text-white">{{ vehicleHost }}</p>
+            <p v-if="isHostVerified" class="text-xs text-green-400">✓ Verified Host</p>
           </div>
         </div>
 
         <!-- Vehicle Specs -->
         <div class="grid grid-cols-3 gap-2 text-center">
           <div class="flex flex-col items-center">
-            <Users class="w-4 h-4 text-neutral-500 mb-1" />
-            <span class="text-xs text-neutral-600">{{ vehicle.passengers }}</span>
+            <Users class="w-4 h-4 text-white/80 mb-1" />
+            <span class="text-xs text-neutral-300">{{ vehiclePassengers }}</span>
           </div>
           <div class="flex flex-col items-center">
-            <Settings class="w-4 h-4 text-neutral-500 mb-1" />
-            <span class="text-xs text-neutral-600 truncate">{{ vehicle.transmission }}</span>
+            <Settings class="w-4 h-4 text-white/80 mb-1" />
+            <span class="text-xs text-neutral-300 truncate">{{ vehicleTransmission }}</span>
           </div>
           <div class="flex flex-col items-center">
-            <Fuel class="w-4 h-4 text-neutral-500 mb-1" />
-            <span class="text-xs text-neutral-600">{{ vehicle.fuel }}</span>
+            <Fuel class="w-4 h-4 text-white/80 mb-1" />
+            <span class="text-xs text-neutral-300">{{ vehicleFuel }}</span>
           </div>
         </div>
       </CardContent>
@@ -139,8 +197,8 @@ const emit = defineEmits<{
     <CardFooter class="pt-0 flex items-center justify-between">
       <div>
         <div class="flex items-baseline gap-1">
-          <span class="text-2xl font-bold">₱{{ vehicle.price }}</span>
-          <span class="text-sm text-neutral-500">/day</span>
+          <span class="text-2xl font-bold text-white">₱{{ vehiclePrice }}</span>
+          <span class="text-sm text-neutral-300">/day</span>
         </div>
       </div>
       <Button 
