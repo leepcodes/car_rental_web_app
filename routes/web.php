@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ListingController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -52,10 +53,9 @@ Route::middleware(['auth', 'role:client'])->group(function () {
     Route::middleware(['profile.complete','verified.user'])->group(function () {
         Route::get('/client/booking', [ListingController::class, 'index'])->name('client.booking');
         Route::get('/client/booking/{id}', [ListingController::class, 'show'])->name('client.booking.show');
-        
-        Route::get('/client/booking/form', function () {
-            return Inertia::render('clientSide/clientsView/Booking/Form');
-        })->name('client.booking.form');
+        Route::get('/client/booking/{id}/form', [PaymentController::class, 'showPaymentForm'])->name('client.booking.form');
+        Route::post('/client/booking/{id}/form', [PaymentController::class, 'processPayment'])->name('client.booking.form.process');
+        Route::get('/booking/confirmation/{bookingId}', [PaymentController::class, 'showConfirmation'])->name('booking.confirmation');
     });
 }); 
 

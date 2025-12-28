@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
          // 3 Create client User
         $client = User::create([
             'name' => 'client101',
-            'email' => 'emerson.vyblinx@gmail.com',
+            'email' => 'client@gmail.com',
             'password' => Hash::make('password'),
             'user_type' => 'client'
         ]);
@@ -32,7 +32,7 @@ class UserSeeder extends Seeder
             // 3 Create client User
         $operator = User::create([
             'name' => 'operator655',
-            'email' => 'gonzalesemrson079@gmail.com',
+            'email' => 'operator@gmail.com',
             'password' => Hash::make('password'),
             'user_type' => 'operator'
         ]);

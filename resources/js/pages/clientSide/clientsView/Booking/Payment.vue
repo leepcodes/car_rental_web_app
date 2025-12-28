@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AppHeader from '@/pages/clientSide/components/AppHeader.vue';
+import PaymentGatewayModal from '@/pages/clientSide/components/PaymentGatewayModal.vue';
 import { 
   ArrowLeft,
   Calendar,
@@ -11,10 +12,11 @@ import {
   CheckCircle,
   Shield,
   AlertCircle,
-  Car
+  Navigation,
 } from 'lucide-vue-next';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const props = withDefaults(
   defineProps<{
@@ -32,11 +34,19 @@ const props = withDefaults(
     subtotal?: string | number;
     serviceFee?: string | number;
     totalPrice?: string | number;
+    operatorId?: string | number;
   }>(),
   { 
     canRegister: true
   }
 );
+
+// Mock location data
+const mockLocation = {
+  address: "SM Mall of Asia, Seaside Blvd, Pasay, Metro Manila",
+  lat: 14.5352,
+  lng: 120.9818,
+};
 
 // Convert string props to numbers for calculations
 const vehicleIdNum = computed(() => typeof props.vehicleId === 'string' ? parseInt(props.vehicleId) : props.vehicleId);
@@ -47,16 +57,10 @@ const serviceFeeNum = computed(() => typeof props.serviceFee === 'string' ? pars
 const totalPriceNum = computed(() => typeof props.totalPrice === 'string' ? parseFloat(props.totalPrice) : props.totalPrice);
 
 // Form data
-const contactName = ref('');
-const contactEmail = ref('');
-const contactPhone = ref('');
-const pickupLocation = ref('');
 const additionalNotes = ref('');
 const agreeToTerms = ref(false);
-const isProcessing = ref(false);
-
-// Payment method (for now just one option)
-const selectedPaymentMethod = ref('card');
+const showPaymentModal = ref(false);
+const isSubmitting = ref(false);
 
 const goBack = () => {
   router.visit(`/client/booking/${vehicleIdNum.value}`);
@@ -74,45 +78,75 @@ const formatDate = (dateString: string) => {
 };
 
 const handlePayNow = () => {
-  // Validate form
-  if (!contactName.value || !contactEmail.value || !contactPhone.value || !pickupLocation.value) {
-    alert('Please fill in all required fields');
-    return;
-  }
+  console.log('=== PAY NOW CLICKED ===');
+  console.log('Agree to Terms:', agreeToTerms.value);
   
+  // Validate terms first
   if (!agreeToTerms.value) {
     alert('Please agree to the terms and conditions');
     return;
   }
+  
+  console.log('Opening payment modal...');
+  // Open payment gateway modal
+  showPaymentModal.value = true;
+};
 
-  isProcessing.value = true;
+// Handle successful payment
+const handlePaymentSuccess = () => {
+  console.log('=== PAYMENT SUCCESS - CREATING BOOKING ===');
+  
+  isSubmitting.value = true;
+  
+  // Prepare data that matches controller validation
+  const bookingData = {
+    pickup_date: props.pickupDate,
+    return_date: props.returnDate,
+    pickup_time: props.pickupTime,
+    return_time: props.returnTime,
+    additional_notes: additionalNotes.value || '',
+    agree_to_terms: 1, // Always 1 when payment succeeds
+  };
 
-  // Here you would integrate with payment gateway
-  console.log('Processing payment:', {
-    vehicle: props.vehicleName,
-    contact: {
-      name: contactName.value,
-      email: contactEmail.value,
-      phone: contactPhone.value,
+  console.log('Vehicle ID:', vehicleIdNum.value);
+  console.log('Booking Data:', bookingData);
+  console.log('Submitting to:', `/client/booking/${vehicleIdNum.value}/form`);
+
+  // Submit booking
+  router.post(`/client/booking/${vehicleIdNum.value}/form`, bookingData, {
+    preserveScroll: true,
+    onBefore: () => {
+      console.log('onBefore: Starting booking creation...');
     },
-    booking: {
-      pickupDate: props.pickupDate,
-      returnDate: props.returnDate,
-      pickupLocation: pickupLocation.value,
-      notes: additionalNotes.value,
+    onStart: () => {
+      console.log('onStart: Request initiated');
     },
-    payment: {
-      method: selectedPaymentMethod.value,
-      amount: totalPriceNum.value
-    }
+    onSuccess: (page) => {
+      console.log('onSuccess: Booking created!', page);
+      showPaymentModal.value = false;
+      isSubmitting.value = false;
+    },
+    onError: (errors) => {
+      console.error('onError: Booking failed!', errors);
+      showPaymentModal.value = false;
+      isSubmitting.value = false;
+      
+      // Show first error
+      const errorMessages = Object.values(errors);
+      if (errorMessages.length > 0) {
+        alert('Booking failed: ' + errorMessages[0]);
+      }
+    },
+    onFinish: () => {
+      console.log('onFinish: Request completed');
+    },
   });
+};
 
-  // Simulate payment processing
-  setTimeout(() => {
-    isProcessing.value = false;
-    alert('Payment gateway integration will be implemented here');
-    // router.visit('/client/bookings/confirmation');
-  }, 1500);
+// Handle payment cancellation
+const handlePaymentCancel = () => {
+  console.log('Payment cancelled');
+  showPaymentModal.value = false;
 };
 </script>
 
@@ -140,7 +174,7 @@ const handlePayNow = () => {
           Complete Your Booking
         </h1>
         <p class="text-neutral-600">
-          Fill in your details and proceed with payment
+          Review your rental details and proceed with payment
         </p>
       </div>
 
@@ -206,64 +240,48 @@ const handlePayNow = () => {
             </CardContent>
           </Card>
 
-          <!-- Contact Information Card -->
+          <!-- Pickup Location Card -->
           <Card>
             <CardHeader>
-              <CardTitle class="text-xl font-['Roboto']">Contact Information</CardTitle>
-              <CardDescription>We'll use these details to confirm your booking</CardDescription>
+              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2">
+                <MapPin class="w-5 h-5 text-[#0081A7]" />
+                Pickup Location
+              </CardTitle>
+              <CardDescription>Vehicle will be available at this location</CardDescription>
             </CardHeader>
             <CardContent class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-neutral-700 mb-2">
-                  Full Name <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="contactName"
-                  type="text"
-                  placeholder="Juan Dela Cruz"
-                  class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none"
-                />
+              <!-- Mock Map Display -->
+              <div class="relative w-full h-64 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg overflow-hidden border-2 border-blue-200">
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="relative">
+                    <div class="absolute w-96 h-1 bg-gray-300 top-20 left-1/2 -translate-x-1/2 rotate-45"></div>
+                    <div class="absolute w-96 h-1 bg-gray-300 top-20 left-1/2 -translate-x-1/2 -rotate-45"></div>
+                    <div class="relative z-10">
+                      <MapPin class="w-12 h-12 text-red-500 fill-red-500 drop-shadow-lg animate-bounce" />
+                    </div>
+                  </div>
+                </div>
+                <div class="absolute top-4 right-4 flex flex-col gap-2">
+                  <button class="w-8 h-8 bg-white rounded shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50">+</button>
+                  <button class="w-8 h-8 bg-white rounded shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50">−</button>
+                </div>
+                <div class="absolute bottom-2 left-2 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded">Map Preview</div>
               </div>
 
-              <div>
-                <label class="block text-sm font-medium text-neutral-700 mb-2">
-                  Email Address <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="contactEmail"
-                  type="email"
-                  placeholder="juan@example.com"
-                  class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-neutral-700 mb-2">
-                  Phone Number <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="contactPhone"
-                  type="tel"
-                  placeholder="+63 912 345 6789"
-                  class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-neutral-700 mb-2">
-                  Pickup Location <span class="text-red-500">*</span>
-                </label>
-                <div class="relative">
-                  <MapPin class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-                  <input
-                    v-model="pickupLocation"
-                    type="text"
-                    placeholder="Enter your pickup address"
-                    class="w-full pl-11 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none"
-                  />
+              <!-- Location Details -->
+              <div class="p-4 bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg border border-[#0081A7]/30">
+                <div class="flex items-start gap-3">
+                  <Navigation class="w-5 h-5 text-[#0081A7] flex-shrink-0 mt-0.5" />
+                  <div class="flex-1">
+                    <p class="font-semibold text-neutral-900 mb-1">{{ mockLocation.address }}</p>
+                    <p class="text-xs text-neutral-600">
+                      Coordinates: {{ mockLocation.lat }}, {{ mockLocation.lng }}
+                    </p>
+                  </div>
                 </div>
               </div>
 
+              <!-- Additional Notes -->
               <div>
                 <label class="block text-sm font-medium text-neutral-700 mb-2">
                   Additional Notes (Optional)
@@ -288,10 +306,7 @@ const handlePayNow = () => {
             </CardHeader>
             <CardContent class="pt-6">
               <div class="space-y-3">
-                <!-- Payment option 1 - Active for now -->
-                <div 
-                  class="relative p-4 border-2 border-[#0081A7] bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg cursor-pointer"
-                >
+                <div class="relative p-4 border-2 border-[#0081A7] bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg cursor-pointer">
                   <div class="flex items-center gap-3">
                     <div class="w-5 h-5 rounded-full border-2 border-[#0081A7] bg-[#0081A7] flex items-center justify-center">
                       <div class="w-2 h-2 bg-white rounded-full"></div>
@@ -302,37 +317,7 @@ const handlePayNow = () => {
                     </div>
                     <CreditCard class="w-6 h-6 text-[#0081A7]" />
                   </div>
-                  <Badge class="absolute top-2 right-2 bg-[#00AFB9] text-white border-0">
-                    Recommended
-                  </Badge>
-                </div>
-
-                <!-- Payment option 2 - Coming soon -->
-                <div class="relative p-4 border-2 border-neutral-200 bg-neutral-50 rounded-lg opacity-60">
-                  <div class="flex items-center gap-3">
-                    <div class="w-5 h-5 rounded-full border-2 border-neutral-300 bg-white"></div>
-                    <div class="flex-1">
-                      <p class="font-semibold text-neutral-700">GCash / PayMaya</p>
-                      <p class="text-sm text-neutral-500">E-wallet payment</p>
-                    </div>
-                  </div>
-                  <Badge class="absolute top-2 right-2 bg-neutral-400 text-white border-0">
-                    Coming Soon
-                  </Badge>
-                </div>
-
-                <!-- Payment option 3 - Coming soon -->
-                <div class="relative p-4 border-2 border-neutral-200 bg-neutral-50 rounded-lg opacity-60">
-                  <div class="flex items-center gap-3">
-                    <div class="w-5 h-5 rounded-full border-2 border-neutral-300 bg-white"></div>
-                    <div class="flex-1">
-                      <p class="font-semibold text-neutral-700">Bank Transfer</p>
-                      <p class="text-sm text-neutral-500">Direct bank deposit</p>
-                    </div>
-                  </div>
-                  <Badge class="absolute top-2 right-2 bg-neutral-400 text-white border-0">
-                    Coming Soon
-                  </Badge>
+                  <Badge class="absolute top-2 right-2 bg-[#00AFB9] text-white border-0">Recommended</Badge>
                 </div>
               </div>
 
@@ -420,12 +405,12 @@ const handlePayNow = () => {
               <CardFooter class="flex flex-col gap-3">
                 <button
                   @click="handlePayNow"
-                  :disabled="isProcessing"
+                  :disabled="isSubmitting"
                   class="w-full py-4 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto'] flex items-center justify-center gap-2"
                 >
-                  <CreditCard v-if="!isProcessing" class="w-5 h-5" />
-                  <span v-if="isProcessing">Processing...</span>
-                  <span v-else>Pay Now</span>
+                  <CreditCard v-if="!isSubmitting" class="w-5 h-5" />
+                  <span v-if="isSubmitting">Processing...</span>
+                  <span v-else>Confirm Booking</span>
                 </button>
                 <p class="text-xs text-center text-neutral-500">
                   <Shield class="w-3 h-3 inline mr-1" />
@@ -455,10 +440,17 @@ const handlePayNow = () => {
       </div>
     </div>
   </div>
+
+  <!-- Payment Gateway Modal -->
+  <PaymentGatewayModal
+    :is-open="showPaymentModal"
+    :amount="totalPriceNum || 0"
+    :on-success="handlePaymentSuccess"
+    :on-cancel="handlePaymentCancel"
+  />
 </template>
 
 <style scoped>
-/* Ensure Roboto font is used */
 * {
   font-family: 'Roboto', sans-serif;
 }

@@ -1,11 +1,11 @@
 
 // components/VehicleCard.vue
 <script setup lang="ts">
-import { Heart, Star, MapPin, Users, Settings, Fuel, Car } from 'lucide-react';
+import { Heart, Star, MapPin, Users, Settings, Fuel, Car } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button/index';
+import { Badge } from '@/components/ui/badge/index';
 
 interface Vehicle {
   id: number;
@@ -82,7 +82,7 @@ const emit = defineEmits<{
       </div>
     </Link>
 
-    <Link :href="`/client/booking/otp/${vehicle.id}`" class="block">
+    <Link :href="`/client/booking/${vehicle.id}`" class="block">
       <CardHeader class="pb-3">
         <div class="flex items-start justify-between gap-2">
           <div class="flex-1 min-w-0">

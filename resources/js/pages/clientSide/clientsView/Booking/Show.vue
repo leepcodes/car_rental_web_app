@@ -17,8 +17,8 @@ import {
   ArrowLeft,
   Share2,
   MessageCircle
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from 'lucide-vue-next';
+import { Button } from '@/components/ui/button/index';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -117,25 +117,22 @@ const handleBooking = () => {
     alert('Please select pickup and return dates');
     return;
   }
-  // Navigate to booking form with all details as query parameters
-  const params = new URLSearchParams({
-    vehicleId: props.vehicle.id.toString(),
-    vehicleName: props.vehicle.name,
-    vehicleImage: props.vehicle.images[0] || '',
-    vehicleType: props.vehicle.type,
-    pricePerDay: props.vehicle.price.toString(),
-    pickupDate: selectedPickupDate.value,
-    returnDate: selectedReturnDate.value,
-    pickupTime: selectedPickupTime.value,
-    returnTime: selectedReturnTime.value,
-    totalDays: totalDays.value.toString(),
-    subtotal: totalPrice.value.toString(),
-    serviceFee: (totalPrice.value * 0.05).toString(),
-    totalPrice: (totalPrice.value * 1.05).toString()
-  });
   
-  router.visit(`/client/booking/form?${params.toString()}`);
+  // Navigate with query params using the new route structure
+  router.visit(`/client/booking/${props.vehicle.id}/form`, {
+    data: {
+      pickupDate: selectedPickupDate.value,
+      returnDate: selectedReturnDate.value,
+      pickupTime: selectedPickupTime.value,
+      returnTime: selectedReturnTime.value,
+      totalDays: totalDays.value,
+      subtotal: totalPrice.value,
+      serviceFee: (totalPrice.value * 0.05),
+      totalPrice: (totalPrice.value * 1.05)
+    }
+  });
 };
+
 
 const contactHost = () => {
   console.log('Contacting host:', props.vehicle.host.name);

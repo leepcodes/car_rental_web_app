@@ -139,9 +139,9 @@ class ListingController extends Controller
                 'responseRate' => 95, // Static - needs response tracking
             ],
             'available' => $vehicle->is_active,
-            'featured' => $vehicle->is_featured ?? false, // Static - add featured field later
+            'featured' => $vehicle->is_featured ?? false,
             'description' => $vehicle->description ?? "Experience quality and reliability with this {$vehicle->brand} {$vehicle->model}. Perfect for your transportation needs in Metro Manila.",
-            'features' => $vehicle->features ?? [
+            'features' => $vehicle->features ? json_decode($vehicle->features, true) : [
                 'Air Conditioning',
                 'Power Steering',
                 'ABS Brakes',
