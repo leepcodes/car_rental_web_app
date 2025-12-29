@@ -8,13 +8,15 @@ import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import { Form, Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { ref } from 'vue';
 
 defineProps<{
     status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
 }>();
+
+const showPassword = ref(false);
 </script>
 
 <template>
@@ -113,42 +115,45 @@ defineProps<{
                                     v-if="canResetPassword"
                                     :href="request()"
                                     class="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                                    :tabindex="5"
+                                    :tabindex="4"
                                     style="font-family: 'Roboto', sans-serif"
                                 >
                                     Forgot password?
                                 </TextLink>
                             </div>
-                            <Input
-                                id="password"
-                                type="password"
-                                name="password"
-                                required
-                                :tabindex="2"
-                                autocomplete="current-password"
-                                placeholder="••••••••"
-                                class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11"
-                                style="font-family: 'Roboto', sans-serif"
-                            />
-                        </div>
-
-                        <!-- Remember Me -->
-                        <div class="flex items-center justify-between">
-                            <Label for="remember" class="flex items-center space-x-3 text-white cursor-pointer" style="font-family: 'Roboto', sans-serif">
-                                <Checkbox 
-                                    id="remember" 
-                                    name="remember" 
-                                    :tabindex="3"
-                                    class="border-white/30 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                            <div class="relative">
+                                <Input
+                                    id="password"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    name="password"
+                                    required
+                                    :tabindex="2"
+                                    autocomplete="current-password"
+                                    placeholder="••••••••"
+                                    class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11 pr-10"
+                                    style="font-family: 'Roboto', sans-serif"
                                 />
-                                <span class="text-sm">Remember me</span>
-                            </Label>
+                                <button
+                                    type="button"
+                                    @click="showPassword = !showPassword"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-900 hover:text-gray-700 transition-colors"
+                                    :tabindex="-1"
+                                >
+                                    <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Submit Button - Custom HTML Button -->
                         <button
                             type="submit"
-                            :tabindex="4"
+                            :tabindex="3"
                             :disabled="processing"
                             data-test="login-button"
                             class="mt-4 w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -171,7 +176,7 @@ defineProps<{
                         Don't have an account?
                         <TextLink 
                             :href="register()" 
-                            :tabindex="5"
+                            :tabindex="4"
                             class="text-blue-400 hover:text-blue-300 font-semibold transition-colors ml-1"
                             style="font-family: 'Roboto', sans-serif"
                         >

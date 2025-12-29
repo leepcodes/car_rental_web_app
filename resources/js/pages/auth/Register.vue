@@ -11,6 +11,16 @@ import { Briefcase } from 'lucide-vue-next';
 
 const isProcessing = ref(false);
 const selectedUserType = ref('client');
+const showPassword = ref(false);
+const showPasswordConfirmation = ref(false);
+const passwordValue = ref('');
+
+// Password validation computed properties
+const hasMinLength = computed(() => passwordValue.value.length >= 8);
+const hasNumber = computed(() => /\d/.test(passwordValue.value));
+const hasSpecialChar = computed(() => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(passwordValue.value));
+const isPasswordValid = computed(() => hasMinLength.value && hasNumber.value && hasSpecialChar.value);
+const showPasswordHint = computed(() => passwordValue.value.length > 0 && !isPasswordValid.value);
 
 // Check URL parameter on component mount
 onMounted(() => {
@@ -174,17 +184,58 @@ const pageSubtitle = computed(() => {
                             <Label for="password" class="text-white text-sm font-medium" style="font-family: 'Roboto', sans-serif">
                                 Password
                             </Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                name="password"
-                                required
-                                :tabindex="3"
-                                autocomplete="new-password"
-                                placeholder="••••••••"
-                                class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11"
-                                style="font-family: 'Roboto', sans-serif"
-                            />
+                            <div class="relative">
+                                <Input
+                                    id="password"
+                                    v-model="passwordValue"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    name="password"
+                                    required
+                                    :tabindex="3"
+                                    autocomplete="new-password"
+                                    placeholder="••••••••"
+                                    class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11 pr-10"
+                                    style="font-family: 'Roboto', sans-serif"
+                                />
+                                <button
+                                    type="button"
+                                    @click="showPassword = !showPassword"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-neutral-300 transition-colors"
+                                    :tabindex="-1"
+                                >
+                                    <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <!-- Password Requirements Hint -->
+                            <div v-if="showPasswordHint" class="mt-2 space-y-1 text-xs" style="font-family: 'Roboto', sans-serif">
+                                <div class="flex items-center gap-2" :class="hasMinLength ? 'text-green-400' : 'text-red-400'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path v-if="hasMinLength" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>At least 8 characters</span>
+                                </div>
+                                <div class="flex items-center gap-2" :class="hasNumber ? 'text-green-400' : 'text-red-400'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path v-if="hasNumber" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>At least 1 number</span>
+                                </div>
+                                <div class="flex items-center gap-2" :class="hasSpecialChar ? 'text-green-400' : 'text-red-400'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path v-if="hasSpecialChar" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    <span>At least 1 special character</span>
+                                </div>
+                            </div>
                             <InputError :message="errors.password" class="text-red-400" />
                         </div>
 
@@ -193,17 +244,33 @@ const pageSubtitle = computed(() => {
                             <Label for="password_confirmation" class="text-white text-sm font-medium" style="font-family: 'Roboto', sans-serif">
                                 Confirm Password
                             </Label>
-                            <Input
-                                id="password_confirmation"
-                                type="password"
-                                name="password_confirmation"
-                                required
-                                :tabindex="4"
-                                autocomplete="new-password"
-                                placeholder="••••••••"
-                                class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11"
-                                style="font-family: 'Roboto', sans-serif"
-                            />
+                            <div class="relative">
+                                <Input
+                                    id="password_confirmation"
+                                    :type="showPasswordConfirmation ? 'text' : 'password'"
+                                    name="password_confirmation"
+                                    required
+                                    :tabindex="4"
+                                    autocomplete="new-password"
+                                    placeholder="••••••••"
+                                    class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11 pr-10"
+                                    style="font-family: 'Roboto', sans-serif"
+                                />
+                                <button
+                                    type="button"
+                                    @click="showPasswordConfirmation = !showPasswordConfirmation"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-neutral-300 transition-colors"
+                                    :tabindex="-1"
+                                >
+                                    <svg v-if="!showPasswordConfirmation" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                                    </svg>
+                                </button>
+                            </div>
                             <InputError :message="errors.password_confirmation" class="text-red-400" />
                         </div>
 
@@ -321,5 +388,16 @@ const pageSubtitle = computed(() => {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* Hide browser's default password reveal button */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-password-reveal {
+  display: none !important;
 }
 </style> 
