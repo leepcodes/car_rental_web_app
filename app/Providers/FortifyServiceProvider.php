@@ -33,7 +33,7 @@ class FortifyServiceProvider extends ServiceProvider
                     case 'client':
                         return redirect()->route('client.booking');
                     case 'operator':
-                        return redirect()->route('dashboard');
+                        return redirect()->route('operator.vehicles.list');
                     case 'admin':
                         return redirect()->route('dashboard');
                     default:
@@ -54,7 +54,7 @@ class FortifyServiceProvider extends ServiceProvider
                     case 'client':
                         return redirect()->route('client.booking');
                     case 'operator':
-                        return redirect()->route('dashboard');
+                        return redirect()->route('operator.vehicles.list');
                     case 'admin':
                         return redirect()->route('dashboard');
                     default:

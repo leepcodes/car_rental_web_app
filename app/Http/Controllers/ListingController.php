@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
 use App\Models\Vehicle_Attachment;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Storage;
+use Carbon\Carbon;
 
 class ListingController extends Controller
 {
@@ -53,6 +55,21 @@ class ListingController extends Controller
                 ->orderBy('id', 'asc')
                 ->first();
 
+            // Get next available date - check if there's any active/upcoming booking
+            $nextAvailableDate = null;
+            $latestBooking = Booking::where('vehicle_id', $vehicle->id)
+                ->whereIn('status', ['pending', 'confirmed', 'ongoing'])
+                ->orderBy('end_date', 'desc')
+                ->first();
+            
+            if ($latestBooking && $latestBooking->end_date) {
+                $nextAvailableDate = Carbon::parse($latestBooking->end_date)
+                    ->addDay()
+                    ->format('Y-m-d');
+            }
+
+            $isAvailable = $vehicle->is_available ?? false;
+
             return [
                 'id' => $vehicle->id,
                 'name' => "{$vehicle->brand} {$vehicle->model} ({$vehicle->year})",
@@ -67,10 +84,18 @@ class ListingController extends Controller
                 'reviews' => $vehicle->reviews ?? 0, 
                 'host' => $vehicle->operator ? $vehicle->operator->name : 'Unknown Host',
                 'hostVerified' => $vehicle->operator ? true : false, 
-                'available' => $vehicle->is_active,
+                'available' => $isAvailable,
+                'nextAvailableDate' => $nextAvailableDate,
                 'featured' => $vehicle->is_featured ?? false, 
             ];
-        });
+        })
+        // Sort: Available vehicles first, then unavailable ones
+        ->sortBy([
+            ['available', 'desc'], 
+            ['featured', 'desc'],  
+            ['rating', 'desc'],
+        ])
+        ->values(); 
 
         return Inertia::render('clientSide/clientsView/Booking/Listing', [
             'vehicles' => $vehicles,
@@ -83,14 +108,46 @@ class ListingController extends Controller
             ]
         ]);
     }
-     public function show($id)
+
+    public function show($id)
     {
         $vehicle = Vehicle::with(['operator', 'operatorLocation'])
             ->where('id', $id)
             ->where('is_active', true)
             ->firstOrFail();
 
-        // Get all vehicle photos
+        // Get upcoming bookings for calendar view
+        $upcomingBookings = Booking::where('vehicle_id', $vehicle->id)
+            ->whereIn('status', ['pending', 'confirmed', 'ongoing'])
+            ->where('start_date', '>=', now())
+            ->orderBy('start_date', 'asc')
+            ->take(5)
+            ->get()
+            ->map(function($booking) {
+                return [
+                    'start_date' => $booking->start_date,
+                    'end_date' => $booking->end_date,
+                    'status' => $booking->status,
+                ];
+            });
+
+        // Get latest booking with end date
+        $nextAvailableDate = null;
+        $latestBooking = Booking::where('vehicle_id', $vehicle->id)
+            ->whereIn('status', ['pending', 'confirmed', 'ongoing'])
+            ->orderBy('end_date', 'desc')
+            ->first();
+        
+        if ($latestBooking && $latestBooking->end_date) {
+            $nextAvailableDate = Carbon::parse($latestBooking->end_date)
+                ->addDay()
+                ->format('Y-m-d');
+        }
+
+        // Check availability from is_available column 
+        // Operator and client must confirm before this becomes true
+        $isAvailable = $vehicle->is_available ?? false;
+
         $vehiclePhotos = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
             ->where('attachment_type', 'vehicle_photo')
             ->orderBy('id', 'asc')
@@ -102,8 +159,7 @@ class ListingController extends Controller
                     'full_url' => Storage::url($attachment->attachment_url),
                 ];
             });
-
-        // Get other attachments (documents)
+ 
         $documents = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
             ->whereIn('attachment_type', ['or', 'cr', 'insurance', 'other'])
             ->orderBy('attachment_type', 'asc')
@@ -116,29 +172,31 @@ class ListingController extends Controller
                     'full_url' => Storage::url($attachment->attachment_url),
                 ];
             });
-
-        // Format vehicle data for frontend
+        // Prepare vehicle data for the view, some fields have default values 
+        // because not all vehicles may have complete info and have available column ready in th backend
         $vehicleData = [
             'id' => $vehicle->id,
             'name' => "{$vehicle->brand} {$vehicle->model} {$vehicle->year}",
             'type' => $vehicle->body_type ?? 'Vehicle',
             'images' => $vehiclePhotos->pluck('full_url')->toArray(),
-            'price' => $vehicle->price ?? 0, // Static for now - you'll need to add pricing
+            'price' => $vehicle->price ?? 0,
             'location' => $vehicle->operatorLocation ? $vehicle->operatorLocation->name : 'Location Not Set',
             'passengers' => $vehicle->seating_capacity ?? 4,
             'transmission' => $vehicle->transmission ?? 'Manual',
             'fuel' => $vehicle->fuel_type ?? 'Gasoline',
-            'rating' => $vehicle->rating ?? 4.5, // Static for now - needs ratings system
-            'reviews' => $vehicle->reviews ?? 0, // Static for now - needs reviews table
+            'rating' => $vehicle->rating ?? 4.5,
+            'reviews' => $vehicle->reviews ?? 0,
             'host' => [
                 'name' => $vehicle->operator ? $vehicle->operator->name : 'Unknown Host',
                 'verified' => $vehicle->operator ? true : false,
-                'rating' => $vehicle->operator ? $vehicle->operator->rating : 4.8, // Static - needs host ratings
+                'rating' => $vehicle->operator ? $vehicle->operator->rating : 4.8,
                 'totalVehicles' => Vehicle::where('operator_id', $vehicle->operator_id)->count(),
-                'responseTime' => '1 hour', // Static - needs response tracking
-                'responseRate' => 95, // Static - needs response tracking
+                'responseTime' => '1 hour',
+                'responseRate' => 95,
             ],
-            'available' => $vehicle->is_active,
+            'available' => $isAvailable,
+            'nextAvailableDate' => $nextAvailableDate,
+            'upcomingBookings' => $upcomingBookings,
             'featured' => $vehicle->is_featured ?? false,
             'description' => $vehicle->description ?? "Experience quality and reliability with this {$vehicle->brand} {$vehicle->model}. Perfect for your transportation needs in Metro Manila.",
             'features' => $vehicle->features ? json_decode($vehicle->features, true) : [
@@ -150,16 +208,16 @@ class ListingController extends Controller
                 'USB Port',
                 'Bluetooth Audio',
                 'Backup Camera',
-            ], // Static - add features table later
+            ],
             'specifications' => [
                 'year' => $vehicle->year,
                 'make' => $vehicle->brand,
                 'model' => $vehicle->model,
                 'color' => $vehicle->color ?? 'Not specified',
-                'mileage' => 'Contact for details', // Static - add mileage field
-                'engine' => 'Contact for details', // Static - add engine field
+                'mileage' => 'Contact for details',
+                'engine' => 'Contact for details',
                 'seats' => $vehicle->seating_capacity ?? 4,
-                'doors' => 4, // Static - add doors field
+                'doors' => 4,
                 'plateNumber' => $vehicle->license_plate,
             ],
             'rules' => [
@@ -169,12 +227,12 @@ class ListingController extends Controller
                 'Fuel policy: Return with same fuel level',
                 'No smoking inside the vehicle',
                 'Pets allowed with prior approval',
-            ], // Static - add rules table later
+            ],
             'insurance' => [
                 'included' => true,
                 'coverage' => 'Comprehensive insurance included',
                 'details' => 'Covers collision damage, theft, and third-party liability',
-            ], // Static - add insurance details later
+            ],
             'documents' => $documents,
         ];
 

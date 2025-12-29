@@ -30,6 +30,7 @@ class Vehicle extends Model
         'description',
         'is_featured',
         'features',
+        'is_available',
     ];
         protected $casts = [
         'license_plate' => 'string',

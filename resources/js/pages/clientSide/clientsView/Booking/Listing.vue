@@ -22,6 +22,8 @@ interface Vehicle {
   host: string;
   hostVerified: boolean;
   available: boolean;
+  isBooked?: boolean;
+  nextAvailableDate?: string;
   featured: boolean;
 }
 
@@ -48,6 +50,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const favorites = ref<Set<number>>(new Set());
 const sortBy = ref('featured');
+const showUnavailable = ref(true);
 
 const toggleFavorite = (id: number) => {
   if (favorites.value.has(id)) {
@@ -59,16 +62,32 @@ const toggleFavorite = (id: number) => {
 
 const handleBook = (id: number) => {
   const vehicle = props.vehicles.find(v => v.id === id);
+  
+  if (!vehicle?.available) {
+    alert('This vehicle is currently unavailable. Please check the next available date or choose another vehicle.');
+    return;
+  }
+  
   console.log('Booking vehicle:', vehicle?.name);
-  // Navigate to OTP verification page
   router.visit(`/client/booking/${id}`);
 };
 
 const sortedVehicles = computed(() => {
   let result = [...props.vehicles];
 
+  // Filter unavailable if toggle is off
+  if (!showUnavailable.value) {
+    result = result.filter(v => v.available);
+  }
+
   // Sort
   result.sort((a, b) => {
+    // Always put unavailable vehicles last
+    if (a.available !== b.available) {
+      return a.available ? -1 : 1;
+    }
+
+    // Then sort by selected criteria
     switch(sortBy.value) {
       case 'price-low':
         return a.price - b.price;
@@ -83,6 +102,14 @@ const sortedVehicles = computed(() => {
   });
 
   return result;
+});
+
+const availableCount = computed(() => {
+  return props.vehicles.filter(v => v.available).length;
+});
+
+const unavailableCount = computed(() => {
+  return props.vehicles.filter(v => !v.available).length;
 });
 </script>
 
@@ -99,7 +126,7 @@ const sortedVehicles = computed(() => {
               Find Your Perfect Ride
             </h1>
             <p class="text-neutral-600">
-              Discover {{ vehicles.length }} vehicles available for rent in Metro Manila
+              {{ availableCount }} available, {{ unavailableCount }} currently booked
             </p>
           </div>
 
@@ -133,11 +160,24 @@ const sortedVehicles = computed(() => {
         </div>
       </div>
 
-      <!-- Sort Options -->
-      <div class="flex justify-between items-center mb-6">
-        <p class="text-sm text-neutral-600">
-          Showing {{ sortedVehicles.length }} {{ sortedVehicles.length === 1 ? 'vehicle' : 'vehicles' }}
-        </p>
+      <!-- Sort and Filter Options -->
+      <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+        <div class="flex items-center gap-4">
+          <p class="text-sm text-neutral-600">
+            Showing {{ sortedVehicles.length }} {{ sortedVehicles.length === 1 ? 'vehicle' : 'vehicles' }}
+          </p>
+          
+          <!-- Toggle for showing unavailable -->
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="checkbox" 
+              v-model="showUnavailable"
+              class="w-4 h-4 text-[#0081A7] border-neutral-300 rounded focus:ring-[#0081A7]"
+            />
+            <span class="text-sm text-neutral-600">Show unavailable</span>
+          </label>
+        </div>
+        
         <div class="flex items-center gap-2">
           <label for="sort" class="text-sm text-neutral-600">Sort by:</label>
           <select

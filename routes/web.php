@@ -68,20 +68,17 @@ Route::middleware(['auth', 'role:operator'])->group(function () {
     
     // Protected operator dashboard route
     Route::middleware(['profile.complete','verified.user'])->group(function () {
-        Route::get('/operator/dashboard', function () {
-            return Inertia::render('clientSide/operatorsView/Dashboard');
-        })->name('operator.dashboard');
-    
-    // Vehicle management routes
-    Route::middleware(['permission:manage own vehicles'])->prefix('operator/vehicles')->name('operator.vehicles.')->controller(VehicleController::class)->group(function () {
-        Route::get('/', 'operatorIndex')->name('list');
-        Route::get('/create', 'create')->name('create');
-        Route::post('/', 'store')->name('store');
-        Route::get('/{id}', 'show')->name('show');
-        Route::get('/{id}/edit', 'edit')->name('edit');
-        Route::put('/{id}', 'update')->name('update');
-        Route::delete('/{id}', 'destroy')->name('destroy');
-    });
+
+        // Vehicle management routes
+        Route::middleware(['permission:manage own vehicles'])->prefix('operator/vehicles')->name('operator.vehicles.')->controller(VehicleController::class)->group(function () {
+            Route::get('/', 'operatorIndex')->name('list');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{id}', 'show')->name('show');
+            Route::get('/{id}/edit', 'edit')->name('edit');
+            Route::put('/{id}', 'update')->name('update');
+            Route::delete('/{id}', 'destroy')->name('destroy');
+        });
      });
 });
 // Test API routes directly in web.php

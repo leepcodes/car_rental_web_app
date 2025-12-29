@@ -108,7 +108,7 @@ class PaymentController extends Controller
                 'return_time' => $validated['return_time'],
                 'notes' => $validated['notes'] ?? null,
                 'price_per_day' => $vehicle->price ?? 0,
-                'payment_method' => $validated['payment_method'], // ✅ ADD THIS LINE
+                'payment_method' => $validated['payment_method'], 
             ];
 
             $booking = PaymentService::createBooking($bookingData);

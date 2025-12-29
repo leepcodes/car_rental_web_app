@@ -13,5 +13,8 @@ class Operator_Location extends Model
         'state',
         'zip_code',
         'country',
+        'latitude',
+        'longitude',
+        'operator_id',
     ];  
 }

@@ -72,79 +72,86 @@ class PaymentService
         }
         return $referenceNumber;
     }
-
+    
     /**
      * Create booking with payment and transaction records
      */
-public static function createBooking(array $data): Booking
-{
-    // Validation of required fields
-    $required = ['vehicle_id', 'operator_id', 'client_id', 'pickup_date', 'return_date', 'price_per_day'];
-    foreach ($required as $field) {
-        if (!isset($data[$field])) {
-            Log::error('❌ Missing required field:', ['field' => $field]);
-            throw new \Exception("Missing required field: {$field}");
+    public static function createBooking(array $data): Booking
+    {
+        // Validation of required fields
+        $required = ['vehicle_id', 'operator_id', 'client_id', 'pickup_date', 'return_date', 'price_per_day'];
+        foreach ($required as $field) {
+            if (!isset($data[$field])) {
+                Log::error('❌ Missing required field:', ['field' => $field]);
+                throw new \Exception("Missing required field: {$field}");
+            }
+        }
+        DB::beginTransaction();
+
+        try {
+            // Calculate pricing
+            $pricing = self::calculatePricing($data);
+            
+            // Create booking
+            Log::info('→ Creating booking record...');
+            $bookingData = [
+                'vehicle_id' => $data['vehicle_id'],
+                'operator_id' => $data['operator_id'],
+                'client_id' => $data['client_id'],
+                'start_date' => $data['pickup_date'],
+                'end_date' => $data['return_date'],
+                'total_price' => $pricing['total_price'],
+                'status' => 'pending',
+                'notes' => $data['notes'] ?? null,
+            ];
+
+            $booking = Booking::create($bookingData);
+
+            // Update vehicle availability
+            Log::info('→ Updating vehicle availability...');
+            DB::table('vehicles')
+                ->where('id', $data['vehicle_id'])
+                ->update(['is_available' => false]);
+
+            $referenceNumber = self::generateReferenceNumber();
+
+            $paymentData = [
+                'booking_id' => $booking->id,
+                'payment_method' => $data['payment_method'] ?? null,
+                'reference_number' => $referenceNumber,
+                'amount' => $pricing['total_price'],
+                'payment_status' => 'pending',
+            ];
+
+            $payment = Payment::create($paymentData);
+
+            $transactionData = [
+                'payment_id' => $payment->id,
+                'booking_id' => $booking->id,
+                'amount' => $pricing['total_price'],
+                'transaction_type' => 'credit',
+                'status' => 'pending',
+            ];
+
+            Transaction::create($transactionData);
+            
+            DB::commit();
+        
+            $booking->load('payment');
+
+            return $booking;
+
+        } catch (\Exception $e) {
+            Log::error('Error Details:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'code' => $e->getCode(),
+            ]);
+            DB::rollBack();
+            throw $e;
         }
     }
-    DB::beginTransaction();
-
-    try {
-        // Calculate pricing
-        $pricing = self::calculatePricing($data);
-        // Create booking
-        Log::info('→ Creating booking record...');
-        $bookingData = [
-            'vehicle_id' => $data['vehicle_id'],
-            'operator_id' => $data['operator_id'],
-            'client_id' => $data['client_id'],
-            'start_date' => $data['pickup_date'],
-            'end_date' => $data['return_date'],
-            'total_price' => $pricing['total_price'],
-            'status' => 'pending',
-            'notes' => $data['notes'] ?? null,
-        ];
-
-        $booking = Booking::create($bookingData);
-
-        $referenceNumber = self::generateReferenceNumber();
-
-        $paymentData = [
-            'booking_id' => $booking->id,
-            'payment_method' => $data['payment_method'] ?? null,
-            'reference_number' => $referenceNumber,
-            'amount' => $pricing['total_price'],
-            'payment_status' => 'pending',
-        ];
-
-        $payment = Payment::create($paymentData);
-
-        $transactionData = [
-            'payment_id' => $payment->id,
-            'booking_id' => $booking->id,
-            'amount' => $pricing['total_price'],
-            'transaction_type' => 'credit',
-            'status' => 'pending',
-        ];
-
-        $transaction = Transaction::create($transactionData);
-        
-        DB::commit();
-      
-        $booking->load('payment');
-
-        return $booking;
-
-    } catch (\Exception $e) {
-        Log::error('Error Details:', [
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-            'code' => $e->getCode(),
-        ]);
-        DB::rollBack();
-        throw $e;
-    }
-}
 
     /**
      * Complete payment and update booking status
@@ -168,7 +175,7 @@ public static function createBooking(array $data): Booking
             ]);
 
             $booking->update(['status' => 'confirmed']);
-            $transactionsUpdated = $booking->payment->transactions()
+            $booking->payment->transactions()
                 ->where('status', 'pending')
                 ->update([
                     'status' => 'completed',
