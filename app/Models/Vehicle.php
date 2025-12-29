@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Vehicle extends Model
 {
@@ -34,11 +35,11 @@ class Vehicle extends Model
         'license_plate' => 'string',
         'is_active' => 'boolean',
     ];
-    public function operator()
+    public function operator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'operator_id', 'id');
     }
-    public function operatorLocation()
+    public function operatorLocation(): BelongsTo
     {
         return $this->belongsTo(Operator_Location::class, 'operator_locations', 'id');
     }

@@ -5,10 +5,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class ClientProfileController extends Controller
-{
-
+{   
+    /**
+     * Show the client profile creation form.
+     */
+    public function create()
+    {
+        return Inertia::render('clientSide/clientsView/profileCompletion/profileCompletion');
+    }
+    /**
+     * Store the client profile data.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -20,11 +30,9 @@ class ClientProfileController extends Controller
         ]);
         
         $user = auth()->user();
-        
-        // Upload license file
+         
         $licensePath = $request->file('license_file')->store('licenses/clients', 'public');
-        
-        // Create client profile
+          
         $user->client()->create([
             'address' => $validated['address'],
             'age' => $validated['age'],
@@ -32,11 +40,9 @@ class ClientProfileController extends Controller
             'license_number' => $validated['license_number'],
             'license_url' => $licensePath, 
         ]);
-        
-        // Update profile_completed flag
+         
         $user->update(['profile_completed' => true]);
-        
-        // Redirect to client dashboard
+         
         return redirect()->route('client.booking')
             ->with('success', 'Profile completed successfully!');
     }

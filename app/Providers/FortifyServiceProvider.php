@@ -33,9 +33,9 @@ class FortifyServiceProvider extends ServiceProvider
                     case 'client':
                         return redirect()->route('client.booking');
                     case 'operator':
-                        return redirect()->route('operator.dashboard');
+                        return redirect()->route('dashboard');
                     case 'admin':
-                        return redirect()->route('admin.dashboard');
+                        return redirect()->route('dashboard');
                     default:
                         // This should never happen if user_type is properly set
                         abort(403, 'Invalid user type');
@@ -54,9 +54,9 @@ class FortifyServiceProvider extends ServiceProvider
                     case 'client':
                         return redirect()->route('client.booking');
                     case 'operator':
-                        return redirect()->route('operator.dashboard');
+                        return redirect()->route('dashboard');
                     case 'admin':
-                        return redirect()->route('admin.dashboard');
+                        return redirect()->route('dashboard');
                     default:
                         abort(403, 'Invalid user type');
                 }

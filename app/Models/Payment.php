@@ -18,11 +18,20 @@ class Payment extends Model
         'amount',
         'payment_status',
         'paid_at',
+        'failed_at',
+        'failure_reason',
+        'card_last_four',
+        'card_brand',
+        'ewallet_number',
+        'ewallet_email'
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'paid_at' => 'datetime',
+        'card_last_four' => 'string',
+        'card_brand' => 'string',
+        'ewallet_number' => 'string',
+        'ewallet_email' => 'string',
     ];
 
     public function booking(): BelongsTo

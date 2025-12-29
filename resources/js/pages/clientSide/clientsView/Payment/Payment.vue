@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { ref, computed, onMounted } from 'vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import AppHeader from '@/pages/clientSide/components/AppHeader.vue';
-import PaymentGatewayModal from '@/pages/clientSide/components/PaymentGatewayModal.vue';
 import { 
   ArrowLeft,
   Calendar,
@@ -13,6 +12,7 @@ import {
   Shield,
   AlertCircle,
   Navigation,
+  Wallet,
 } from 'lucide-vue-next';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,11 +35,39 @@ const props = withDefaults(
     serviceFee?: string | number;
     totalPrice?: string | number;
     operatorId?: string | number;
+    errors?: Record<string, string>;
   }>(),
   { 
-    canRegister: true
+    canRegister: true,
+    errors: () => ({})
   }
 );
+
+// Get page props for reactive errors
+const page = usePage();
+
+// Log component mount and props
+onMounted(() => {
+  console.log('=== PAYMENT COMPONENT MOUNTED ===');
+  console.log('All Props:', {
+    vehicleId: props.vehicleId,
+    vehicleName: props.vehicleName,
+    vehicleImage: props.vehicleImage,
+    vehicleType: props.vehicleType,
+    pricePerDay: props.pricePerDay,
+    pickupDate: props.pickupDate,
+    returnDate: props.returnDate,
+    pickupTime: props.pickupTime,
+    returnTime: props.returnTime,
+    totalDays: props.totalDays,
+    subtotal: props.subtotal,
+    serviceFee: props.serviceFee,
+    totalPrice: props.totalPrice,
+    operatorId: props.operatorId,
+  });
+  console.log('Initial Errors:', props.errors);
+  console.log('Page Props:', page.props);
+});
 
 // Mock location data
 const mockLocation = {
@@ -49,7 +77,12 @@ const mockLocation = {
 };
 
 // Convert string props to numbers for calculations
-const vehicleIdNum = computed(() => typeof props.vehicleId === 'string' ? parseInt(props.vehicleId) : props.vehicleId);
+const vehicleIdNum = computed(() => {
+  const id = typeof props.vehicleId === 'string' ? parseInt(props.vehicleId) : props.vehicleId;
+  console.log('vehicleIdNum computed:', id);
+  return id;
+});
+
 const pricePerDayNum = computed(() => typeof props.pricePerDay === 'string' ? parseFloat(props.pricePerDay) : props.pricePerDay);
 const totalDaysNum = computed(() => typeof props.totalDays === 'string' ? parseInt(props.totalDays) : props.totalDays);
 const subtotalNum = computed(() => typeof props.subtotal === 'string' ? parseFloat(props.subtotal) : props.subtotal);
@@ -57,12 +90,15 @@ const serviceFeeNum = computed(() => typeof props.serviceFee === 'string' ? pars
 const totalPriceNum = computed(() => typeof props.totalPrice === 'string' ? parseFloat(props.totalPrice) : props.totalPrice);
 
 // Form data
-const additionalNotes = ref('');
+const notes = ref('');
 const agreeToTerms = ref(false);
-const showPaymentModal = ref(false);
+const selectedPaymentMethod = ref<'credit_card' | 'gcash' | 'paymaya'>('credit_card');
 const isSubmitting = ref(false);
+const validationErrors = ref<string[]>([]);
 
 const goBack = () => {
+  console.log('=== GO BACK CLICKED ===');
+  console.log('Navigating to:', `/client/booking/${vehicleIdNum.value}`);
   router.visit(`/client/booking/${vehicleIdNum.value}`);
 };
 
@@ -78,77 +114,151 @@ const formatDate = (dateString: string) => {
 };
 
 const handlePayNow = () => {
-  console.log('=== PAY NOW CLICKED ===');
-  console.log('Agree to Terms:', agreeToTerms.value);
+  console.log('╔═══════════════════════════════════════════════════════════╗');
+  console.log('║           PAY NOW BUTTON CLICKED - START                  ║');
+  console.log('╚═══════════════════════════════════════════════════════════╝');
   
-  // Validate terms first
+  // Log current state
+  console.log('📋 Current Form State:', {
+    notes: notes.value,
+    agreeToTerms: agreeToTerms.value,
+    selectedPaymentMethod: selectedPaymentMethod.value,
+    isSubmitting: isSubmitting.value,
+  });
+  
+  // Clear previous errors
+  validationErrors.value = [];
+  console.log('✓ Cleared previous validation errors');
+  
+  // Frontend validation
   if (!agreeToTerms.value) {
-    alert('Please agree to the terms and conditions');
+    console.error('❌ FRONTEND VALIDATION FAILED: Terms not agreed');
+    validationErrors.value = ['Please agree to the terms and conditions'];
     return;
   }
-  
-  console.log('Opening payment modal...');
-  // Open payment gateway modal
-  showPaymentModal.value = true;
-};
-
-// Handle successful payment
-const handlePaymentSuccess = () => {
-  console.log('=== PAYMENT SUCCESS - CREATING BOOKING ===');
+  console.log('✓ Frontend validation passed');
   
   isSubmitting.value = true;
+  console.log('✓ Set isSubmitting = true');
   
-  // Prepare data that matches controller validation
+  // Prepare booking data
   const bookingData = {
     pickup_date: props.pickupDate,
     return_date: props.returnDate,
     pickup_time: props.pickupTime,
     return_time: props.returnTime,
-    additional_notes: additionalNotes.value || '',
-    agree_to_terms: 1, // Always 1 when payment succeeds
+    notes: notes.value || '',
+    agree_to_terms: 1,
+    payment_method: selectedPaymentMethod.value,
   };
 
-  console.log('Vehicle ID:', vehicleIdNum.value);
-  console.log('Booking Data:', bookingData);
-  console.log('Submitting to:', `/client/booking/${vehicleIdNum.value}/form`);
+  const targetUrl = `/client/booking/${vehicleIdNum.value}/form`;
+  
+  console.log('📦 Booking Data Prepared:', bookingData);
+  console.log('🎯 Target URL:', targetUrl);
+  console.log('🚀 Initiating Inertia POST request...');
 
   // Submit booking
-  router.post(`/client/booking/${vehicleIdNum.value}/form`, bookingData, {
+  router.post(targetUrl, bookingData, {
     preserveScroll: true,
-    onBefore: () => {
-      console.log('onBefore: Starting booking creation...');
+    
+    onBefore: (visit) => {
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║                    onBefore Hook                          ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+      console.log('Visit details:', visit);
     },
-    onStart: () => {
-      console.log('onStart: Request initiated');
+    
+    onStart: (visit) => {
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║                     onStart Hook                          ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+      console.log('Request initiated:', visit);
     },
+    
+    onProgress: (progress) => {
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║                    onProgress Hook                        ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+      console.log('Progress:', progress);
+    },
+    
     onSuccess: (page) => {
-      console.log('onSuccess: Booking created!', page);
-      showPaymentModal.value = false;
-      isSubmitting.value = false;
-    },
-    onError: (errors) => {
-      console.error('onError: Booking failed!', errors);
-      showPaymentModal.value = false;
-      isSubmitting.value = false;
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║                    onSuccess Hook                         ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+      console.log('✅ Request completed successfully');
+      console.log('Page component:', page.component);
+      console.log('Page props:', page.props);
+      console.log('Page URL:', page.url);
       
-      // Show first error
-      const errorMessages = Object.values(errors);
-      if (errorMessages.length > 0) {
-        alert('Booking failed: ' + errorMessages[0]);
+      // Check if there are validation errors
+      const errors = page.props.errors as Record<string, string> | undefined;
+      if (errors && Object.keys(errors).length > 0) {
+        console.warn('⚠️ Validation errors found despite success:', errors);
+        validationErrors.value = Object.values(errors);
+        isSubmitting.value = false;
+      } else {
+        console.log('✓ No validation errors found');
+        console.log('✓ Booking created successfully');
+        console.log('✓ Backend will handle redirect to payment gateway');
       }
     },
-    onFinish: () => {
-      console.log('onFinish: Request completed');
+    
+    onError: (errors) => {
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║                     onError Hook                          ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+      console.error('❌ REQUEST FAILED');
+      console.error('Error type:', typeof errors);
+      console.error('Error keys:', Object.keys(errors));
+      console.error('All errors:', errors);
+      
+      // Log each error individually
+      Object.entries(errors).forEach(([key, value]) => {
+        console.error(`  ❌ ${key}:`, value);
+      });
+      
+      isSubmitting.value = false;
+      validationErrors.value = Object.values(errors);
+      
+      console.log('✓ Reset isSubmitting = false');
+      console.log('✓ Updated validationErrors:', validationErrors.value);
+      console.log('🔝 Scrolling to top to show errors...');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    
+    onCancelToken: (cancelToken) => {
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║                  onCancelToken Hook                       ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+      console.log('Cancel token:', cancelToken);
+    },
+    
+    onCancel: () => {
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║                    onCancel Hook                          ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+      console.warn('⚠️ Request was cancelled');
+      isSubmitting.value = false;
+    },
+    
+    onFinish: (visit) => {
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║                    onFinish Hook                          ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+      console.log('Request finished:', visit);
+      console.log('Final isSubmitting state:', isSubmitting.value);
+      console.log('Final validationErrors:', validationErrors.value);
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║           PAY NOW BUTTON CLICKED - END                    ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
     },
   });
 };
-
-// Handle payment cancellation
-const handlePaymentCancel = () => {
-  console.log('Payment cancelled');
-  showPaymentModal.value = false;
-};
 </script>
+
 
 <template>
   <Head title="Booking & Payment" />
@@ -160,7 +270,8 @@ const handlePaymentCancel = () => {
       <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-4">
         <button
           @click="goBack"
-          class="flex items-center gap-2 text-neutral-600 hover:text-[#0081A7] transition-colors group"
+          :disabled="isSubmitting"
+          class="flex items-center gap-2 text-neutral-600 hover:text-[#0081A7] transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ArrowLeft class="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           <span class="font-medium">Back to Vehicle Details</span>
@@ -169,6 +280,21 @@ const handlePaymentCancel = () => {
     </div>
 
     <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+      <!-- Validation Errors Display -->
+      <div v-if="validationErrors.length > 0" class="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+        <div class="flex items-start gap-3">
+          <AlertCircle class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div class="flex-1">
+            <h3 class="font-semibold text-red-900 mb-2">Please correct the following errors:</h3>
+            <ul class="list-disc list-inside space-y-1">
+              <li v-for="(error, index) in validationErrors" :key="index" class="text-sm text-red-700">
+                {{ error }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div class="mb-8">
         <h1 class="text-3xl md:text-4xl font-bold text-neutral-900 font-['Roboto'] mb-2">
           Complete Your Booking
@@ -287,10 +413,11 @@ const handlePaymentCancel = () => {
                   Additional Notes (Optional)
                 </label>
                 <textarea
-                  v-model="additionalNotes"
+                  v-model="notes"
                   rows="3"
                   placeholder="Any special requests or requirements?"
                   class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none resize-none"
+                  :disabled="isSubmitting"
                 ></textarea>
               </div>
             </CardContent>
@@ -301,23 +428,107 @@ const handlePaymentCancel = () => {
             <CardHeader class="bg-gradient-to-r from-[#0081A7]/10 to-[#00AFB9]/10">
               <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2">
                 <CreditCard class="w-5 h-5 text-[#0081A7]" />
-                Payment Method
+                Select Payment Method
               </CardTitle>
+              <CardDescription>Choose how you want to pay</CardDescription>
             </CardHeader>
             <CardContent class="pt-6">
               <div class="space-y-3">
-                <div class="relative p-4 border-2 border-[#0081A7] bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg cursor-pointer">
+                <!-- Credit/Debit Card Option -->
+                <div 
+                  @click="!isSubmitting && (selectedPaymentMethod = 'credit_card')"
+                  :class="[
+                    'relative p-4 border-2 rounded-lg transition-all',
+                    isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+                    selectedPaymentMethod === 'credit_card'
+                      ? 'border-[#0081A7] bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10'
+                      : 'border-neutral-200 hover:border-neutral-300'
+                  ]"
+                >
                   <div class="flex items-center gap-3">
-                    <div class="w-5 h-5 rounded-full border-2 border-[#0081A7] bg-[#0081A7] flex items-center justify-center">
-                      <div class="w-2 h-2 bg-white rounded-full"></div>
+                    <div :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
+                      selectedPaymentMethod === 'credit_card'
+                        ? 'border-[#0081A7] bg-[#0081A7]'
+                        : 'border-neutral-300'
+                    ]">
+                      <div v-if="selectedPaymentMethod === 'credit_card'" class="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                     <div class="flex-1">
                       <p class="font-semibold text-neutral-900">Credit/Debit Card</p>
-                      <p class="text-sm text-neutral-600">Pay securely with your card</p>
+                      <p class="text-sm text-neutral-600">Visa, Mastercard, American Express</p>
                     </div>
-                    <CreditCard class="w-6 h-6 text-[#0081A7]" />
+                    <CreditCard class="w-6 h-6" :class="selectedPaymentMethod === 'credit_card' ? 'text-[#0081A7]' : 'text-neutral-400'" />
                   </div>
-                  <Badge class="absolute top-2 right-2 bg-[#00AFB9] text-white border-0">Recommended</Badge>
+                  <Badge v-if="selectedPaymentMethod === 'credit_card'" class="absolute top-2 right-2 bg-[#00AFB9] text-white border-0">
+                    Selected
+                  </Badge>
+                </div>
+
+                <!-- GCash Option -->
+                <div 
+                  @click="!isSubmitting && (selectedPaymentMethod = 'gcash')"
+                  :class="[
+                    'relative p-4 border-2 rounded-lg transition-all',
+                    isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+                    selectedPaymentMethod === 'gcash'
+                      ? 'border-[#0081A7] bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10'
+                      : 'border-neutral-200 hover:border-neutral-300'
+                  ]"
+                >
+                  <div class="flex items-center gap-3">
+                    <div :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
+                      selectedPaymentMethod === 'gcash'
+                        ? 'border-[#0081A7] bg-[#0081A7]'
+                        : 'border-neutral-300'
+                    ]">
+                      <div v-if="selectedPaymentMethod === 'gcash'" class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <div class="flex-1">
+                      <p class="font-semibold text-neutral-900">GCash</p>
+                      <p class="text-sm text-neutral-600">Pay via GCash e-wallet</p>
+                    </div>
+                    <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white text-xs font-bold">
+                      G
+                    </div>
+                  </div>
+                  <Badge v-if="selectedPaymentMethod === 'gcash'" class="absolute top-2 right-2 bg-[#00AFB9] text-white border-0">
+                    Selected
+                  </Badge>
+                </div>
+
+                <!-- PayMaya Option -->
+                <div 
+                  @click="!isSubmitting && (selectedPaymentMethod = 'paymaya')"
+                  :class="[
+                    'relative p-4 border-2 rounded-lg transition-all',
+                    isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+                    selectedPaymentMethod === 'paymaya'
+                      ? 'border-[#0081A7] bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10'
+                      : 'border-neutral-200 hover:border-neutral-300'
+                  ]"
+                >
+                  <div class="flex items-center gap-3">
+                    <div :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
+                      selectedPaymentMethod === 'paymaya'
+                        ? 'border-[#0081A7] bg-[#0081A7]'
+                        : 'border-neutral-300'
+                    ]">
+                      <div v-if="selectedPaymentMethod === 'paymaya'" class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <div class="flex-1">
+                      <p class="font-semibold text-neutral-900">PayMaya</p>
+                      <p class="text-sm text-neutral-600">Pay via PayMaya e-wallet</p>
+                    </div>
+                    <div class="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-white text-xs font-bold">
+                      PM
+                    </div>
+                  </div>
+                  <Badge v-if="selectedPaymentMethod === 'paymaya'" class="absolute top-2 right-2 bg-[#00AFB9] text-white border-0">
+                    Selected
+                  </Badge>
                 </div>
               </div>
 
@@ -334,7 +545,7 @@ const handlePaymentCancel = () => {
           </Card>
 
           <!-- Terms and Conditions -->
-          <Card>
+          <Card :class="{ 'border-red-300': validationErrors.length > 0 && !agreeToTerms.valueOf() }" class="border-2">
             <CardContent class="pt-6">
               <div class="flex items-start gap-3">
                 <input
@@ -342,6 +553,7 @@ const handlePaymentCancel = () => {
                   type="checkbox"
                   id="terms"
                   class="mt-1 w-4 h-4 text-[#0081A7] border-neutral-300 rounded focus:ring-[#00AFB9]"
+                  :disabled="isSubmitting"
                 />
                 <label for="terms" class="text-sm text-neutral-700 cursor-pointer">
                   I agree to the <a href="#" class="text-[#0081A7] hover:underline font-semibold">Terms and Conditions</a> and 
@@ -408,9 +620,10 @@ const handlePaymentCancel = () => {
                   :disabled="isSubmitting"
                   class="w-full py-4 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto'] flex items-center justify-center gap-2"
                 >
-                  <CreditCard v-if="!isSubmitting" class="w-5 h-5" />
+                  <div v-if="isSubmitting" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <CreditCard v-else class="w-5 h-5" />
                   <span v-if="isSubmitting">Processing...</span>
-                  <span v-else>Confirm Booking</span>
+                  <span v-else>Proceed to Payment</span>
                 </button>
                 <p class="text-xs text-center text-neutral-500">
                   <Shield class="w-3 h-3 inline mr-1" />
@@ -440,14 +653,6 @@ const handlePaymentCancel = () => {
       </div>
     </div>
   </div>
-
-  <!-- Payment Gateway Modal -->
-  <PaymentGatewayModal
-    :is-open="showPaymentModal"
-    :amount="totalPriceNum || 0"
-    :on-success="handlePaymentSuccess"
-    :on-cancel="handlePaymentCancel"
-  />
 </template>
 
 <style scoped>

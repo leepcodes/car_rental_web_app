@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use phpDocumentor\Reflection\Location;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -61,7 +63,7 @@ class User extends Authenticatable
     /**
      * Get the client profile associated with the user.
      */
-    public function client()
+    public function client(): HasOne
     {
         return $this->hasOne(Client::class, 'clients_id', 'id');
     }
@@ -69,7 +71,7 @@ class User extends Authenticatable
     /**
      * Get the operator profile associated with the user.
      */
-    public function operator()
+    public function operator(): HasOne
     {
         return $this->hasOne(Operator::class, 'operators_id', 'id');
     }
@@ -85,7 +87,7 @@ class User extends Authenticatable
     /**
      * Check if user email is verified
      */
-    public function hasVerifiedEmail()
+    public function hasVerifiedEmail(): bool
     {
         return !is_null($this->email_verified_at);
     }
@@ -93,7 +95,7 @@ class User extends Authenticatable
     /**
      * Mark the user's email as verified
      */
-    public function markEmailAsVerified()
+    public function markEmailAsVerified(): bool
     {
         return $this->update([
             'is_verified' => true,

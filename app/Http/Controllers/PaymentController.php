@@ -4,245 +4,224 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Vehicle;
-use App\Models\Vehicle_Attachment;
 use App\Models\Booking;
-use App\Models\Payment;
-use App\Models\Transaction;
-use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
+use App\Services\PaymentService;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
-
+use Inertia\Inertia;
+ 
 class PaymentController extends Controller
 {
-    public function showPaymentForm($id, Request $request)
-    {
-        Log::info('=== PAYMENT FORM STARTED ===');
-        Log::info('Vehicle ID: ' . $id);
-        Log::info('Request Data: ', $request->all());
+ public function showPaymentForm($id, Request $request)
+    { 
+        try {
+            $vehicle = Vehicle::with(['operator', 'operatorLocation'])
+                ->where('id', $id)
+                ->where('is_active', true)
+                ->firstOrFail();
 
-        $vehicle = Vehicle::with(['operator', 'operatorLocation'])
-            ->where('id', $id)
-            ->where('is_active', true)
-            ->firstOrFail();
+            $bookingDetails = PaymentService::getBookingDetailsFromRequest($request);
 
-        Log::info('Vehicle Found: ', ['vehicle' => $vehicle->toArray()]);
+            $pricing = PaymentService::calculatePricing([
+                'pickup_date' => $bookingDetails['pickup_date'],
+                'return_date' => $bookingDetails['return_date'],
+                'price_per_day' => $vehicle->price ?? 0,
+            ]);
 
-        // Get the first vehicle photo
-        $imageAttachment = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
-            ->where('attachment_type', 'vehicle_photo')
-            ->orderBy('id', 'asc')
-            ->first();
+            $responseData = [
+                'vehicleId' => $vehicle->id,
+                'vehicleName' => "{$vehicle->brand} {$vehicle->model} ({$vehicle->year})",
+                'vehicleImage' => PaymentService::getVehicleImage($vehicle->id),
+                'vehicleType' => $vehicle->body_type ?? 'Vehicle',
+                'pricePerDay' => $pricing['price_per_day'],
+                'pickupDate' => $bookingDetails['pickup_date'],
+                'returnDate' => $bookingDetails['return_date'],
+                'pickupTime' => $bookingDetails['pickup_time'],
+                'returnTime' => $bookingDetails['return_time'],
+                'totalDays' => $pricing['total_days'],
+                'subtotal' => $pricing['subtotal'],
+                'serviceFee' => $pricing['service_fee'],
+                'totalPrice' => $pricing['total_price'],
+                'operatorId' => $vehicle->operator_id,
+            ];
 
-        Log::info('Image Attachment: ', ['image' => $imageAttachment ? $imageAttachment->toArray() : 'No image found']);
+            return Inertia::render('clientSide/clientsView/Payment/Payment', $responseData);
 
-        // Get booking details from query parameters
-        $pickupDate = $request->input('pickup_date', now()->addDay()->format('Y-m-d'));
-        $returnDate = $request->input('return_date', now()->addDays(2)->format('Y-m-d'));
-        $pickupTime = $request->input('pickup_time', '09:00');
-        $returnTime = $request->input('return_time', '09:00');
-
-        // Calculate rental duration and pricing
-        $pickup = \Carbon\Carbon::parse($pickupDate);
-        $return = \Carbon\Carbon::parse($returnDate);
-        $totalDays = max(1, $pickup->diffInDays($return));
-        
-        $pricePerDay = $vehicle->price ?? 0;
-        $subtotal = $pricePerDay * $totalDays;
-        $serviceFee = $subtotal * 0.05; // 5% service fee
-        $totalPrice = $subtotal + $serviceFee;
-
-        Log::info('Pricing Calculation: ', [
-            'pickup_date' => $pickupDate,
-            'return_date' => $returnDate,
-            'total_days' => $totalDays,
-            'price_per_day' => $pricePerDay,
-            'subtotal' => $subtotal,
-            'service_fee' => $serviceFee,
-            'total_price' => $totalPrice
-        ]);
-
-        Log::info('=== PAYMENT FORM RENDERED ===');
-
-        return Inertia::render('clientSide/clientsView/Booking/Payment', [
-            'vehicleId' => $vehicle->id,
-            'vehicleName' => "{$vehicle->brand} {$vehicle->model} ({$vehicle->year})",
-            'vehicleImage' => $imageAttachment ? $imageAttachment->attachment_url : '/placeholder-vehicle.jpg',
-            'vehicleType' => $vehicle->body_type ?? 'Vehicle',
-            'pricePerDay' => $pricePerDay,
-            'pickupDate' => $pickupDate,
-            'returnDate' => $returnDate,
-            'pickupTime' => $pickupTime,
-            'returnTime' => $returnTime,
-            'totalDays' => $totalDays,
-            'subtotal' => $subtotal,
-            'serviceFee' => $serviceFee,
-            'totalPrice' => $totalPrice,
-            'operatorId' => $vehicle->operator_id,
-        ]);
+        } catch (\Exception $e) {
+            Log::error('Error:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
-    public function processPayment($id, Request $request)
-    {
-        Log::info('=== PROCESS PAYMENT STARTED ===');
-        Log::info('Vehicle ID: ' . $id);
-        Log::info('User ID: ' . (auth()->check() ? auth()->id() : 'NOT LOGGED IN'));
-        Log::info('Request Data: ', $request->all());
 
-        // Validate the form
+ public function processPayment($id, Request $request)
+    {
+        if (!auth()->check()) {
+            return redirect()->route('login')
+                ->with('error', 'Please login to continue with booking.');
+        }
+
         try {
             $validated = $request->validate([
-                'additional_notes' => 'nullable|string|max:1000',
+                'notes' => 'nullable|string|max:1000',
                 'pickup_date' => 'required|date|after_or_equal:today',
                 'return_date' => 'required|date|after:pickup_date',
                 'pickup_time' => 'required|string',
                 'return_time' => 'required|string',
                 'agree_to_terms' => 'required|accepted',
+                'payment_method' => 'required|in:credit_card,gcash,paymaya',
             ]);
-            Log::info('Validation PASSED');
-            Log::info('Validated Data: ', $validated);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation FAILED: ', $e->errors());
+            Log::error('❌ Validation failed:', [
+                'errors' => $e->errors(),
+                'message' => $e->getMessage(),
+            ]);
             throw $e;
         }
 
-        // Check if user is authenticated
-        if (!auth()->check()) {
-            Log::warning('USER NOT AUTHENTICATED - Redirecting to login');
-            return redirect()->route('login')
-                ->with('error', 'Please login to continue with booking.');
+        try {            
+            $vehicle = Vehicle::where('id', $id)
+                ->where('is_active', true)
+                ->firstOrFail();
+
+        } catch (\Exception $e) {
+            Log::error('❌ Vehicle not found or not active:', [
+                'vehicle_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
 
-        // Check if vehicle is still available
-        Log::info('Checking vehicle availability...');
-        $vehicle = Vehicle::where('id', $id)
-            ->where('is_active', true)
-            ->firstOrFail();
-        Log::info('Vehicle is available: ', ['vehicle_id' => $vehicle->id, 'operator_id' => $vehicle->operator_id]);
-
-        DB::beginTransaction();
-        Log::info('DATABASE TRANSACTION STARTED');
-
         try {
-            // Calculate pricing
-            $pickup = \Carbon\Carbon::parse($validated['pickup_date']);
-            $return = \Carbon\Carbon::parse($validated['return_date']);
-            $totalDays = max(1, $pickup->diffInDays($return));
-            
-            $pricePerDay = $vehicle->price ?? 0;
-            $subtotal = $pricePerDay * $totalDays;
-            $serviceFee = $subtotal * 0.05;
-            $totalPrice = $subtotal + $serviceFee;
-
-            Log::info('Final Pricing: ', [
-                'total_days' => $totalDays,
-                'price_per_day' => $pricePerDay,
-                'subtotal' => $subtotal,
-                'service_fee' => $serviceFee,
-                'total_price' => $totalPrice
-            ]);
-
-            // Create booking
-            Log::info('Creating booking...');
-            $booking = Booking::create([
+            $bookingData = [
                 'vehicle_id' => $vehicle->id,
                 'operator_id' => $vehicle->operator_id,
                 'client_id' => auth()->id(),
-                'start_date' => $validated['pickup_date'],
-                'end_date' => $validated['return_date'],
-                'total_price' => $totalPrice,
-                'status' => 'pending',
-                'notes' => $validated['additional_notes'] ?? null,
+                'pickup_date' => $validated['pickup_date'],
+                'return_date' => $validated['return_date'],
+                'pickup_time' => $validated['pickup_time'],
+                'return_time' => $validated['return_time'],
+                'notes' => $validated['notes'] ?? null,
+                'price_per_day' => $vehicle->price ?? 0,
+                'payment_method' => $validated['payment_method'], // ✅ ADD THIS LINE
+            ];
+
+            $booking = PaymentService::createBooking($bookingData);
+
+            session(['payment_method' => $validated['payment_method']]);
+
+            $redirectUrl = route('payment.gateway', ['booking' => $booking->id]);
+            Log::info('✓ Redirecting to payment gateway:', ['url' => $redirectUrl]);
+            
+            return to_route('payment.gateway', ['booking' => $booking->id]);
+            
+        } catch (\Exception $e) {
+            Log::error('Detailed Error Information:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'code' => $e->getCode(),
+                'vehicle_id' => $id,
+                'user_id' => auth()->id(),
             ]);
-            Log::info('Booking CREATED: ', ['booking_id' => $booking->id]);
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Failed to create booking: ' . $e->getMessage()]);
+        }
+    }
+ 
+    public function showPaymentGateway($bookingId)
+    { 
+        try {
+            $booking = Booking::with(['vehicle', 'payment', 'operator'])
+                ->where('id', $bookingId)
+                ->where('client_id', auth()->id())
+                ->firstOrFail();
 
-            // Generate unique reference number
-            Log::info('Generating reference number...');
-            $referenceNumber = $this->generateReferenceNumber();
-            Log::info('Reference number generated: ' . $referenceNumber);
+            if ($booking->payment->payment_status === 'completed') {
+                return to_route('payment.confirmation', ['booking' => $bookingId])
+                    ->with('info', 'This booking has already been paid.');
+            }
 
-            // Create payment record
-            Log::info('Creating payment record...');
-            $payment = Payment::create([
-                'booking_id' => $booking->id,
-                'payment_method' => 'Credit/Debit Card',
-                'reference_number' => $referenceNumber,
-                'amount' => $totalPrice,
-                'payment_status' => 'pending',
+            return Inertia::render('clientSide/clientsView/Payment/PaymentGateway', [
+                'booking' => [
+                    'id' => $booking->id,
+                    'reference_number' => $booking->payment->reference_number,
+                    'amount' => $booking->payment->amount,
+                    'vehicle_name' => "{$booking->vehicle->brand} {$booking->vehicle->model}",
+                    'pickup_date' => $booking->start_date,
+                    'return_date' => $booking->end_date,
+                ],
+                'payment_method' => session('payment_method', 'credit_card'),
             ]);
-            Log::info('Payment CREATED: ', ['payment_id' => $payment->id]);
-
-            // Create transaction record
-            Log::info('Creating transaction record...');
-            $transaction = Transaction::create([
-                'payment_id' => $payment->id,
-                'booking_id' => $booking->id,
-                'amount' => $totalPrice,
-                'transaction_type' => 'credit',
-                'status' => 'pending',
-            ]);
-            Log::info('Transaction CREATED: ', ['transaction_id' => $transaction->id]);
-
-            DB::commit();
-            Log::info('DATABASE TRANSACTION COMMITTED SUCCESSFULLY');
-
-            Log::info('=== BOOKING PROCESS COMPLETED SUCCESSFULLY ===');
-            Log::info('Redirecting to client.booking with success message');
-
-            // Redirect to payment gateway or confirmation page
-            return redirect()
-                ->route('client.booking')
-                ->with('success', 'Booking created successfully! Reference Number: ' . $referenceNumber);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('=== BOOKING PROCESS FAILED ===');
-            Log::error('Exception Message: ' . $e->getMessage());
-            Log::error('Exception Trace: ' . $e->getTraceAsString());
-            
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('error', 'Failed to create booking. Please try again.');
+            Log::error('Payment gateway load failed', [
+                'booking_id' => $bookingId,
+                'error' => $e->getMessage()
+            ]);
+
+            return to_route('client.booking')
+                ->withErrors(['error' => 'Failed to load payment gateway. Please try again.']);
         }
     }
 
-    /**
-     * Generate unique reference number for payment
-     */
-    private function generateReferenceNumber()
+    public function completePayment(Request $request, $bookingId)
     {
-        Log::info('Generating unique reference number...');
-        $attempts = 0;
-        do {
-            $attempts++;
-            $referenceNumber = 'PAY-' . strtoupper(Str::random(10));
-            Log::info('Attempt ' . $attempts . ': ' . $referenceNumber);
-        } while (Payment::where('reference_number', $referenceNumber)->exists());
+        $validated = $request->validate([
+            'payment_method' => 'required|in:credit_card,gcash,paymaya',
+            'card_last_four' => 'nullable|string|size:4',
+            'card_brand' => 'nullable|string',
+            'ewallet_number' => 'nullable|string',
+            'ewallet_email' => 'nullable|email',
+        ]);
 
-        Log::info('Unique reference number generated after ' . $attempts . ' attempts: ' . $referenceNumber);
-        return $referenceNumber;
-    }
-
-    /**
-     * Show booking confirmation page
-     */
-    public function showConfirmation($bookingId)
-    {
-        Log::info('=== SHOWING CONFIRMATION PAGE ===');
-        Log::info('Booking ID: ' . $bookingId);
-        Log::info('User ID: ' . auth()->id());
-
-        $booking = Booking::with(['vehicle', 'payment', 'operator', 'client'])
+        $booking = Booking::with('payment')
             ->where('id', $bookingId)
             ->where('client_id', auth()->id())
             ->firstOrFail();
 
-        Log::info('Booking Found: ', ['booking' => $booking->toArray()]);
-        Log::info('=== CONFIRMATION PAGE RENDERED ===');
+        try {
+            PaymentService::completePayment($booking, $validated);
+            return to_route('payment.confirmation', ['booking' => $bookingId])
+                ->with('success', 'Payment completed successfully! Reference: ' . $booking->payment->reference_number);
+            
+        } catch (\Exception $e) {
+            Log::error('Payment completion failed', [
+                'booking_id' => $bookingId,
+                'error' => $e->getMessage()
+            ]);
 
-        return Inertia::render('clientSide/clientsView/Booking/Confirmation', [
-            'booking' => $booking,
-        ]);
+            return back()
+                ->withErrors(['error' => 'Payment failed. Please try again.']);
+        }
+    }
+
+    public function showConfirmation($bookingId)
+    { 
+        try {
+            $booking = Booking::with(['vehicle', 'payment', 'operator', 'client'])
+                ->where('id', $bookingId)
+                ->where('client_id', auth()->id())
+                ->firstOrFail();
+
+            return Inertia::render('clientSide/clientsView/Payment/Confirmation', [
+                'booking' => $booking,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Confirmation page load failed', [
+                'booking_id' => $bookingId,
+                'error' => $e->getMessage()
+            ]);
+
+            return to_route('client.booking')
+                ->withErrors(['error' => 'Failed to load confirmation page.']);
+        }
     }
 }

@@ -5,9 +5,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
-class OperatorProfileController extends Controller  // Change this line!
+class OperatorProfileController extends Controller 
 {
+    /**
+     * Show the operator profile creation form.
+     */
+    public function create()
+    {   
+        return Inertia::render('clientSide/operatorsView/profileCompletion/profileCompletion');
+    }
+    /**
+     * Store the operator profile data.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -20,11 +31,9 @@ class OperatorProfileController extends Controller  // Change this line!
         
         $user = auth()->user();
         
-        try {
-            // Upload license file
+        try { 
             $licensePath = $request->file('license_file')->store('licenses/operators', 'public');
-            
-            // Create operator profile
+             
             $user->operator()->create([
                 'address' => $validated['address'],
                 'age' => $validated['age'],
@@ -34,11 +43,9 @@ class OperatorProfileController extends Controller  // Change this line!
                 'status' => 'inactive', // Default status
                 'verification' => 'pending', // Default verification
             ]);
-            
-            // Update profile_completed flag
+             
             $user->update(['profile_completed' => true]);
-            
-            // Redirect to operator dashboard
+             
             return redirect()->route('operator.dashboard')
                 ->with('success', 'Profile submitted for verification!');
                 

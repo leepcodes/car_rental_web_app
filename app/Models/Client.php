@@ -5,6 +5,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Client extends Model
 {
@@ -26,11 +27,11 @@ class Client extends Model
     /**
      * Get the user that owns the client profile.
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'clients_id', 'id');
     }
-        public function operator()
+        public function operator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'operator_id', 'id');
     }
