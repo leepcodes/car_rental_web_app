@@ -13,17 +13,57 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
+import { Link, usePage } from '@inertiajs/vue3';
+import { 
+    BookOpen, 
+    Folder, 
+    LayoutGrid, 
+    Users, 
+    Car, 
+    Calendar, 
+    Settings, 
+    MonitorCog
+} from 'lucide-vue-next';
+import { computed } from 'vue';
 import AppLogo from './AppLogo.vue';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
+// Get the authenticated user from Inertia
+const page = usePage();
+const userType = computed(() => page.props.auth?.user?.user_type);
+
+// Dynamic navigation based on role
+const mainNavItems = computed<NavItem[]>(() => {
+    if (userType.value === 'superadmin') {
+        return [
+            {
+                title: 'Dashboard',
+                href: '/superadmin/dashboard',
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Clients',
+                href: '/superadmin/clients',
+                icon: Users,
+            },
+            {
+                title: 'Operators',
+                href: '/superadmin/operators',
+                icon: MonitorCog,
+            },
+           
+         
+        ];
+    }
+
+    // Default for other roles
+    return [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+    ];
+});
 
 const footerNavItems: NavItem[] = [
     {

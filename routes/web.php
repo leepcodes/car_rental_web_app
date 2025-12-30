@@ -6,6 +6,7 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\ClientProfileController;
 use App\Http\Controllers\OperatorProfileController;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\SuperAdminController;
 
 // Public routes
 Route::get('/', function () {
@@ -78,6 +79,33 @@ Route::middleware(['auth', 'role:operator'])->group(function () {
         })->name('operator.dashboard');
     });
 });
+
+// SuperAdmin Routes
+
+Route::middleware(['auth', 'role:superadmin'])->group(function () {
+    
+    Route::get('/superadmin/superadmin', function () {
+        return Inertia::render('superadmin/superadmin'); 
+    })->name('superadmin.superadmin');
+
+    Route::get('/superadmin/clients', [SuperAdminController::class, 'clients'])
+        ->name('superadmin.clients');
+
+    Route::delete('/superadmin/clients/{id}', [SuperAdminController::class, 'deleteClient'])
+    ->name('superadmin.clients.delete');
+
+    Route::get('/superadmin/operators', [SuperAdminController::class, 'operators'])
+        ->name('superadmin.operators');
+
+    Route::delete('/superadmin/operators/{id}', [SuperAdminController::class, 'deleteOperator'])
+        ->name('superadmin.operators.delete');
+
+    Route::get('/api/users/{id}', [SuperAdminController::class, 'showUser']);
+    
+});
+
+
+
 // Test API routes directly in web.php
 Route::prefix('api')->middleware(['auth:sanctum'])->group(function () {
     Route::post('/otp/verify', [VerificationController::class, 'verify']);

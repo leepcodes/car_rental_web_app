@@ -41,8 +41,10 @@ class FortifyServiceProvider extends ServiceProvider
                         return redirect()->route('operator.dashboard');
                     case 'admin':
                         return redirect()->route('admin.dashboard');
+                    case 'superadmin':
+                        return redirect()->route('superadmin.superadmin');
                     default:
-                        // This should never happen if user_type is properly set
+
                         abort(403, 'Invalid user type');
                 }
             }

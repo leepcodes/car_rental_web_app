@@ -46,6 +46,10 @@ class CheckProfileComplete
             return redirect()->route('operator.profile.complete')
                 ->with('info', 'Please complete your profile to continue.');
         }
+
+        if ($user->hasRole('superadmin')) {
+           return redirect()->route('superadmin.dashboard');  
+        }
         
         return $next($request);
     }
