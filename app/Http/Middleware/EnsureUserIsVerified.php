@@ -44,10 +44,18 @@ class EnsureUserIsVerified
             'email_verified_at' => $dbUser->email_verified_at,
         ]);
 
-        // ✅ SUPER STRICT VERIFICATION CHECK
-        // Check multiple conditions to handle all possible data types
-        $isVerifiedInt = ($dbUser->is_verified === 1 || $dbUser->is_verified === '1');
-        $isVerifiedBool = ($dbUser->is_verified === true || $dbUser->is_verified === 'true');
+        // ✅ ALLOW ACCESS TO OTP-RELATED ROUTES (before checking verification)
+        if ($request->is('client/booking/otp*') || 
+            $request->is('api/otp*') || 
+            $request->is('otp*') ||
+            $request->is('debug/verification')) {
+            Log::info('✅ Allowing access to OTP route: ' . $request->path());
+            return $next($request);
+        }
+
+        // ✅ STRICT VERIFICATION CHECK - User must be verified to proceed
+        // Convert to boolean - only TRUE values (1, '1', true, 'true') pass
+        $isVerifiedFromFlag = in_array($dbUser->is_verified, [1, '1', true, 'true', 'TRUE'], true);
         
         // ⚠️ CRITICAL FIX: Properly validate email_verified_at
         // Check if it's not null AND not an invalid MySQL zero date
@@ -57,11 +65,11 @@ class EnsureUserIsVerified
             && $dbUser->email_verified_at !== '0000-00-00'
             && strtotime($dbUser->email_verified_at) !== false;
         
-        $isVerified = $isVerifiedInt || $isVerifiedBool || $hasValidEmailVerified;
+        // User is considered verified ONLY if either flag is true OR email_verified_at is valid
+        $isVerified = $isVerifiedFromFlag || $hasValidEmailVerified;
         
         Log::info('Verification checks:', [
-            'isVerifiedInt' => $isVerifiedInt,
-            'isVerifiedBool' => $isVerifiedBool,
+            'isVerifiedFromFlag' => $isVerifiedFromFlag,
             'hasValidEmailVerified' => $hasValidEmailVerified,
             'FINAL_isVerified' => $isVerified
         ]);
@@ -72,16 +80,8 @@ class EnsureUserIsVerified
             return $next($request);
         }
 
+        // ❌ USER IS NOT VERIFIED - Block and redirect
         Log::warning('❌ USER IS NOT VERIFIED - Blocking access');
-
-        // ✅ Allow access to OTP-related routes (so they can verify)
-        if ($request->is('client/booking/otp*') || 
-            $request->is('api/otp*') || 
-            $request->is('otp*') ||
-            $request->is('debug/verification')) {
-            Log::info('Allowing access to special route: ' . $request->path());
-            return $next($request);
-        }
 
         // If it's an API request, return JSON response
         if ($request->expectsJson()) {
@@ -103,14 +103,18 @@ class EnsureUserIsVerified
         }
         
         // Extract vehicle ID if present in the route
-        $vehicleId = $request->route('id') ?? $request->input('vehicle_id') ?? null;
+        $vehicleId = $request->route('id') ?? $request->input('vehicle_id') ?? $request->query('vehicle_id') ?? null;
         
         Log::info('Redirecting to OTP verification', [
             'vehicle_id' => $vehicleId,
             'intended_url' => session('url.intended')
         ]);
         
-        return redirect()->route('otp.show', ['vehicleId' => $vehicleId])
+        // Redirect to client booking OTP route with vehicle ID if available
+        $redirectRoute = 'otp.show';
+        $redirectParams = $vehicleId ? ['vehicleId' => $vehicleId] : [];
+        
+        return redirect()->route($redirectRoute, $redirectParams)
             ->with('warning', 'Please verify your email to continue with your booking.');
     }
 }
