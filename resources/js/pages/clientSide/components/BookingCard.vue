@@ -56,8 +56,8 @@ const handleBooking = () => {
 
 <template>
   <div class="sticky top-24">
-    <Card class="border-2 border-[#0081A7]/20 shadow-xl">
-      <CardHeader class="bg-gradient-to-br from-[#0081A7] to-[#00AFB9] text-white">
+    <Card class="border-2 border-neutral-600 shadow-xl bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 overflow-hidden">
+      <CardHeader class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 text-white">
         <div class="flex items-baseline gap-2">
           <span class="text-4xl font-bold font-['Roboto']">₱{{ price.toLocaleString() }}</span>
           <span class="text-lg">/day</span>
@@ -67,75 +67,75 @@ const handleBooking = () => {
         </CardDescription>
       </CardHeader>
       
-      <CardContent class="pt-6 space-y-4">
+      <CardContent class="pt-6 space-y-4 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
         <!-- Pickup Date & Time -->
         <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2">
-            <Calendar class="w-4 h-4 inline mr-1" />
+          <label class="block text-sm font-medium text-white mb-2">
+            <Calendar class="w-4 h-4 inline mr-1 text-white" />
             Pickup Date & Time
           </label>
           <div class="grid grid-cols-2 gap-2">
             <input
               v-model="selectedPickupDate"
               type="date"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none text-sm"
+              class="px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-sm text-white"
               :min="new Date().toISOString().split('T')[0]"
             />
             <input
               v-model="selectedPickupTime"
               type="time"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none text-sm"
+              class="px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-sm text-white"
             />
           </div>
         </div>
 
         <!-- Return Date & Time -->
         <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2">
-            <Calendar class="w-4 h-4 inline mr-1" />
+          <label class="block text-sm font-medium text-white mb-2">
+            <Calendar class="w-4 h-4 inline mr-1 text-white" />
             Return Date & Time
           </label>
           <div class="grid grid-cols-2 gap-2">
             <input
               v-model="selectedReturnDate"
               type="date"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none text-sm"
+              class="px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-sm text-white"
               :min="selectedPickupDate || new Date().toISOString().split('T')[0]"
             />
             <input
               v-model="selectedReturnTime"
               type="time"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none text-sm"
+              class="px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-sm text-white"
             />
           </div>
         </div>
 
         <!-- Price Breakdown -->
-        <div v-if="totalDays > 0" class="pt-4 border-t space-y-2">
+        <div v-if="totalDays > 0" class="pt-4 border-t border-white/20 space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-neutral-600">₱{{ price.toLocaleString() }} × {{ totalDays }} day{{ totalDays > 1 ? 's' : '' }}</span>
-            <span class="font-semibold">₱{{ totalPrice.toLocaleString() }}</span>
+            <span class="text-white/80">₱{{ price.toLocaleString() }} × {{ totalDays }} day{{ totalDays > 1 ? 's' : '' }}</span>
+            <span class="font-semibold text-white">₱{{ totalPrice.toLocaleString() }}</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-neutral-600">Service fee</span>
-            <span class="font-semibold">₱{{ serviceFee.toLocaleString() }}</span>
+            <span class="text-white/80">Service fee</span>
+            <span class="font-semibold text-white">₱{{ serviceFee.toLocaleString() }}</span>
           </div>
-          <div class="flex justify-between pt-2 border-t font-bold text-lg">
-            <span>Total</span>
-            <span class="text-[#0081A7]">₱{{ grandTotal.toLocaleString() }}</span>
+          <div class="flex justify-between pt-2 border-t border-white/20 font-bold text-lg">
+            <span class="text-white">Total</span>
+            <span class="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">₱{{ grandTotal.toLocaleString() }}</span>
           </div>
         </div>
       </CardContent>
       
-      <CardFooter class="flex flex-col gap-2">
+      <CardFooter class="flex flex-col gap-2 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
         <button
           @click="handleBooking"
           :disabled="!available"
-          class="w-full py-3 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto']"
+          class="w-full py-3 bg-gradient-to-r from-blue-400 to-cyan-400 text-white rounded-lg font-bold text-lg hover:shadow-xl hover:from-blue-500 hover:to-cyan-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto']"
         >
           {{ available ? 'Book Now' : 'Not Available' }}
         </button>
-        <p class="text-xs text-center text-neutral-500">
+        <p class="text-xs text-center text-white/70">
           You won't be charged yet
         </p>
       </CardFooter>
@@ -163,8 +163,40 @@ const handleBooking = () => {
   </div>
 </template>
 
-<style scoped>
+<style>
 * {
   font-family: 'Roboto', sans-serif;
+}
+
+/* Style date and time input calendar icons to white */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(100%) brightness(100%);
+  cursor: pointer;
+  opacity: 1 !important;
+  width: 20px;
+  height: 20px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(100%) brightness(120%);
+}
+
+/* For Firefox */
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
+}
+
+/* Ensure icons are visible on webkit browsers */
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button {
+  display: none;
+}
+
+input[type="time"]::-webkit-inner-spin-button,
+input[type="time"]::-webkit-clear-button {
+  display: none;
 }
 </style>
