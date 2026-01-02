@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Client;
 
+use App\Http\Controllers\Controller;
 use App\Models\Vehicle;
 use App\Models\Vehicle_Attachment;
 use App\Models\Booking;
@@ -50,31 +51,17 @@ class ListingController extends Controller
 
         $vehicles = $query->get()->map(function ($vehicle) {
             // Get the first vehicle_photo attachment
-            $imageAttachment = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
-                ->where('attachment_type', 'vehicle_photo')
-                ->orderBy('id', 'asc')
-                ->first();
-
-            // Get next available date - check if there's any active/upcoming booking
-            $nextAvailableDate = null;
-            $latestBooking = Booking::where('vehicle_id', $vehicle->id)
-                ->whereIn('status', ['pending', 'confirmed', 'ongoing'])
-                ->orderBy('end_date', 'desc')
-                ->first();
-            
-            if ($latestBooking && $latestBooking->end_date) {
-                $nextAvailableDate = Carbon::parse($latestBooking->end_date)
-                    ->addDay()
-                    ->format('Y-m-d');
-            }
-
-            $isAvailable = $vehicle->is_available ?? false;
+            $vehiclePhotos = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
+            ->where('attachment_type', 'vehicle_photo')
+            ->orderBy('id', 'asc')
+            ->first()  ;
+        
 
             return [
                 'id' => $vehicle->id,
                 'name' => "{$vehicle->brand} {$vehicle->model} ({$vehicle->year})",
                 'type' => $vehicle->body_type ?? 'Vehicle',
-                'image' => $imageAttachment ? $imageAttachment->attachment_url : '/placeholder-vehicle.jpg',
+                'image' => $vehiclePhotos ? Storage::url($vehiclePhotos->attachment_url) : '/placeholder-vehicle.jpg',
                 'price' => $vehicle->price ?? 0, 
                 'location' => $vehicle->operatorLocation ? $vehicle->operatorLocation->name : 'Location Not Set',
                 'passengers' => $vehicle->seating_capacity ?? 4,
@@ -83,15 +70,13 @@ class ListingController extends Controller
                 'rating' => $vehicle->rating ?? 0,
                 'reviews' => $vehicle->reviews ?? 0, 
                 'host' => $vehicle->operator ? $vehicle->operator->name : 'Unknown Host',
-                'hostVerified' => $vehicle->operator ? true : false, 
-                'available' => $isAvailable,
-                'nextAvailableDate' => $nextAvailableDate,
+                'hostVerified' => $vehicle->operator ? true : false,
+                'active' => $vehicle->is_active ?? true,
                 'featured' => $vehicle->is_featured ?? false, 
             ];
         })
-        // Sort: Available vehicles first, then unavailable ones
+        // Sort by featured first, then by rating
         ->sortBy([
-            ['available', 'desc'], 
             ['featured', 'desc'],  
             ['rating', 'desc'],
         ])
@@ -116,37 +101,19 @@ class ListingController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        // Get upcoming bookings for calendar view
-        $upcomingBookings = Booking::where('vehicle_id', $vehicle->id)
-            ->whereIn('status', ['pending', 'confirmed', 'ongoing'])
-            ->where('start_date', '>=', now())
-            ->orderBy('start_date', 'asc')
-            ->take(5)
+        // Get all bookings for this vehicle (including completed ones)
+        $bookedDates = Booking::where('vehicle_id', $vehicle->id)
+            ->whereIn('status', ['pending', 'confirmed', 'ongoing', 'completed'])
+            ->orderBy('start_date', 'desc')
             ->get()
             ->map(function($booking) {
                 return [
+                    'id' => $booking->id,
                     'start_date' => $booking->start_date,
                     'end_date' => $booking->end_date,
                     'status' => $booking->status,
                 ];
             });
-
-        // Get latest booking with end date
-        $nextAvailableDate = null;
-        $latestBooking = Booking::where('vehicle_id', $vehicle->id)
-            ->whereIn('status', ['pending', 'confirmed', 'ongoing'])
-            ->orderBy('end_date', 'desc')
-            ->first();
-        
-        if ($latestBooking && $latestBooking->end_date) {
-            $nextAvailableDate = Carbon::parse($latestBooking->end_date)
-                ->addDay()
-                ->format('Y-m-d');
-        }
-
-        // Check availability from is_available column 
-        // Operator and client must confirm before this becomes true
-        $isAvailable = $vehicle->is_available ?? false;
 
         $vehiclePhotos = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
             ->where('attachment_type', 'vehicle_photo')
@@ -172,8 +139,22 @@ class ListingController extends Controller
                     'full_url' => Storage::url($attachment->attachment_url),
                 ];
             });
-        // Prepare vehicle data for the view, some fields have default values 
-        // because not all vehicles may have complete info and have available column ready in th backend
+
+        $codingDayNumber = null;
+        if ($vehicle->coding_day) {
+            $dayMap = [
+                'Sunday' => 0,
+                'Monday' => 1,
+                'Tuesday' => 2,
+                'Wednesday' => 3,
+                'Thursday' => 4,
+                'Friday' => 5,
+                'Saturday' => 6,
+            ];
+            // Case-insensitive matching
+            $codingDayNumber = $dayMap[ucfirst(strtolower($vehicle->coding_day))] ?? null;
+        }
+
         $vehicleData = [
             'id' => $vehicle->id,
             'name' => "{$vehicle->brand} {$vehicle->model} {$vehicle->year}",
@@ -194,9 +175,8 @@ class ListingController extends Controller
                 'responseTime' => '1 hour',
                 'responseRate' => 95,
             ],
-            'available' => $isAvailable,
-            'nextAvailableDate' => $nextAvailableDate,
-            'upcomingBookings' => $upcomingBookings,
+            'bookedDates' => $bookedDates,
+            'codingDays' => $codingDayNumber !== null ? [$codingDayNumber] : [], 
             'featured' => $vehicle->is_featured ?? false,
             'description' => $vehicle->description ?? "Experience quality and reliability with this {$vehicle->brand} {$vehicle->model}. Perfect for your transportation needs in Metro Manila.",
             'features' => $vehicle->features ? json_decode($vehicle->features, true) : [

@@ -1,8 +1,9 @@
 <?php
-// app/Http/Controllers/OperatorProfileController.php
+// app/Http/Controllers/Operator/OperatorProfileController.php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Operator;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -14,7 +15,7 @@ class OperatorProfileController extends Controller
      */
     public function create()
     {   
-        return Inertia::render('clientSide/operatorsView/profileCompletion/profileCompletion');
+        return Inertia::render('clientSide/operatorsView/operatorsProfileCompletion/operatorsProfileCompletion');
     }
     /**
      * Store the operator profile data.
@@ -46,7 +47,7 @@ class OperatorProfileController extends Controller
              
             $user->update(['profile_completed' => true]);
              
-            return redirect()->route('operator.dashboard')
+            return redirect()->route('dashboard')
                 ->with('success', 'Profile submitted for verification!');
                 
         } catch (\Exception $e) {

@@ -21,9 +21,7 @@ interface Vehicle {
   reviews: number;
   host: string;
   hostVerified: boolean;
-  available: boolean;
-  isBooked?: boolean;
-  nextAvailableDate?: string;
+  active: boolean;
   featured: boolean;
 }
 
@@ -50,7 +48,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const favorites = ref<Set<number>>(new Set());
 const sortBy = ref('featured');
-const showUnavailable = ref(true);
+const showInactive = ref(true);
 
 const toggleFavorite = (id: number) => {
   if (favorites.value.has(id)) {
@@ -63,8 +61,8 @@ const toggleFavorite = (id: number) => {
 const handleBook = (id: number) => {
   const vehicle = props.vehicles.find(v => v.id === id);
   
-  if (!vehicle?.available) {
-    alert('This vehicle is currently unavailable. Please check the next available date or choose another vehicle.');
+  if (!vehicle?.active) {
+    alert('This vehicle is currently inactive and cannot be booked.');
     return;
   }
   
@@ -75,16 +73,16 @@ const handleBook = (id: number) => {
 const sortedVehicles = computed(() => {
   let result = [...props.vehicles];
 
-  // Filter unavailable if toggle is off
-  if (!showUnavailable.value) {
-    result = result.filter(v => v.available);
+  // Filter inactive if toggle is off
+  if (!showInactive.value) {
+    result = result.filter(v => v.active);
   }
 
   // Sort
   result.sort((a, b) => {
-    // Always put unavailable vehicles last
-    if (a.available !== b.available) {
-      return a.available ? -1 : 1;
+    // Always put inactive vehicles last
+    if (a.active !== b.active) {
+      return a.active ? -1 : 1;
     }
 
     // Then sort by selected criteria
@@ -104,12 +102,12 @@ const sortedVehicles = computed(() => {
   return result;
 });
 
-const availableCount = computed(() => {
-  return props.vehicles.filter(v => v.available).length;
+const activeCount = computed(() => {
+  return props.vehicles.filter(v => v.active).length;
 });
 
-const unavailableCount = computed(() => {
-  return props.vehicles.filter(v => !v.available).length;
+const inactiveCount = computed(() => {
+  return props.vehicles.filter(v => !v.active).length;
 });
 </script>
 
@@ -126,7 +124,7 @@ const unavailableCount = computed(() => {
               Find Your Perfect Ride
             </h1>
             <p class="text-neutral-600">
-              {{ availableCount }} available, {{ unavailableCount }} currently booked
+              {{ activeCount }} active vehicle{{ activeCount !== 1 ? 's' : '' }}{{ inactiveCount > 0 ? `, ${inactiveCount} inactive` : '' }}
             </p>
           </div>
 
@@ -167,14 +165,14 @@ const unavailableCount = computed(() => {
             Showing {{ sortedVehicles.length }} {{ sortedVehicles.length === 1 ? 'vehicle' : 'vehicles' }}
           </p>
           
-          <!-- Toggle for showing unavailable -->
+          <!-- Toggle for showing inactive -->
           <label class="flex items-center gap-2 cursor-pointer">
             <input 
               type="checkbox" 
-              v-model="showUnavailable"
+              v-model="showInactive"
               class="w-4 h-4 text-[#0081A7] border-neutral-300 rounded focus:ring-[#0081A7]"
             />
-            <span class="text-sm text-neutral-600">Show unavailable</span>
+            <span class="text-sm text-neutral-600">Show inactive vehicles</span>
           </label>
         </div>
         

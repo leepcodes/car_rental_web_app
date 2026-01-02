@@ -1,21 +1,155 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
-import { Calendar, CheckCircle } from 'lucide-vue-next';
+import { Calendar, CheckCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+
+interface BookedDate {
+  id: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
 
 interface Props {
   vehicleId: number;
   price: number;
-  available: boolean;
+  bookedDates: BookedDate[];
+  codingDays?: number[];
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  codingDays: () => []
+});
 
 const selectedPickupDate = ref('');
 const selectedReturnDate = ref('');
-const selectedPickupTime = ref('09:00');
-const selectedReturnTime = ref('09:00');
+const currentMonth = ref(new Date());
+
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// Get active bookings
+const activeBookings = computed(() => 
+  props.bookedDates.filter(b => ['pending', 'confirmed', 'ongoing'].includes(b.status))
+);
+
+// Check if a specific date is booked
+const isDateBooked = (dateStr: string): boolean => {
+  const checkDate = new Date(dateStr);
+  return activeBookings.value.some(booking => {
+    const startDate = new Date(booking.start_date);
+    const endDate = new Date(booking.end_date);
+    return checkDate >= startDate && checkDate <= endDate;
+  });
+};
+
+// Check if date is in the past
+const isPastDate = (dateStr: string): boolean => {
+  const date = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date < today;
+};
+
+// Check if date is a coding day (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+const isCodingDay = (dateStr: string): boolean => {
+  if (!props.codingDays || props.codingDays.length === 0) return false;
+  const date = new Date(dateStr);
+  const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  
+  // Check if this day of week is in the coding days array
+  return props.codingDays.includes(dayOfWeek);
+};
+
+// Generate calendar days
+const calendarDays = computed(() => {
+  const year = currentMonth.value.getFullYear();
+  const month = currentMonth.value.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startingDayOfWeek = firstDay.getDay();
+  
+  const days = [];
+  
+  // Previous month's days (empty cells)
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    days.push({ day: null, date: null, disabled: true, booked: false, isPast: false, isCoding: false });
+  }
+  
+  // Current month's days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const dateStr = date.toISOString().split('T')[0];
+    const isPast = isPastDate(dateStr);
+    const isBooked = isDateBooked(dateStr);
+    const isCoding = isCodingDay(dateStr);
+    
+    days.push({
+      day,
+      date: dateStr,
+      disabled: isPast || isBooked || isCoding,
+      booked: isBooked,
+      isPast,
+      isCoding
+    });
+  }
+  
+  return days;
+});
+
+const handleDateClick = (dateStr: string, disabled: boolean) => {
+  if (disabled || !dateStr) return;
+  
+  if (!selectedPickupDate.value || (selectedPickupDate.value && selectedReturnDate.value)) {
+    // Start new selection
+    selectedPickupDate.value = dateStr;
+    selectedReturnDate.value = '';
+  } else {
+    const pickupDate = new Date(selectedPickupDate.value);
+    const clickedDate = new Date(dateStr);
+    
+    if (clickedDate < pickupDate) {
+      // If clicked date is before pickup, reset and start new selection
+      selectedPickupDate.value = dateStr;
+      selectedReturnDate.value = '';
+    } else {
+      // Check if any date in range is booked or coding day
+      let hasBlockedInRange = false;
+      for (let d = new Date(pickupDate); d <= clickedDate; d.setDate(d.getDate() + 1)) {
+        const checkDateStr = d.toISOString().split('T')[0];
+        if (isDateBooked(checkDateStr) || isCodingDay(checkDateStr)) {
+          hasBlockedInRange = true;
+          break;
+        }
+      }
+      
+      if (hasBlockedInRange) {
+        alert('Cannot select date range that includes booked dates or coding days');
+        return;
+      }
+      
+      selectedReturnDate.value = dateStr;
+    }
+  }
+};
+
+const isDateInRange = (dateStr: string): boolean => {
+  if (!dateStr || !selectedPickupDate.value || !selectedReturnDate.value) return false;
+  const date = new Date(dateStr);
+  const pickup = new Date(selectedPickupDate.value);
+  const returnD = new Date(selectedReturnDate.value);
+  return date >= pickup && date <= returnD;
+};
+
+const previousMonth = () => {
+  currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() - 1, 1);
+};
+
+const nextMonth = () => {
+  currentMonth.value = new Date(currentMonth.value.getFullYear(), currentMonth.value.getMonth() + 1, 1);
+};
 
 const totalDays = computed(() => {
   if (!selectedPickupDate.value || !selectedReturnDate.value) return 0;
@@ -26,17 +160,10 @@ const totalDays = computed(() => {
   return diffDays || 1;
 });
 
-const totalPrice = computed(() => {
-  return props.price * totalDays.value;
-});
-
-const serviceFee = computed(() => {
-  return totalPrice.value * 0.05;
-});
-
-const grandTotal = computed(() => {
-  return totalPrice.value + serviceFee.value;
-});
+const totalPrice = computed(() => props.price * totalDays.value);
+const serviceFee = computed(() => totalPrice.value * 0.05);
+const grandTotal = computed(() => totalPrice.value + serviceFee.value);
+const canBook = computed(() => selectedPickupDate.value && selectedReturnDate.value);
 
 const handleBooking = () => {
   if (!selectedPickupDate.value || !selectedReturnDate.value) {
@@ -44,13 +171,15 @@ const handleBooking = () => {
     return;
   }
   
-  // Use GET request with query parameters
   router.get(`/client/booking/${props.vehicleId}/form`, {
     pickup_date: selectedPickupDate.value,
     return_date: selectedReturnDate.value,
-    pickup_time: selectedPickupTime.value,
-    return_time: selectedReturnTime.value,
   });
+};
+
+const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 </script>
 
@@ -67,46 +196,142 @@ const handleBooking = () => {
         </CardDescription>
       </CardHeader>
       
-      <CardContent class="pt-6 space-y-4">
-        <!-- Pickup Date & Time -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2">
-            <Calendar class="w-4 h-4 inline mr-1" />
-            Pickup Date & Time
-          </label>
-          <div class="grid grid-cols-2 gap-2">
-            <input
-              v-model="selectedPickupDate"
-              type="date"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none text-sm"
-              :min="new Date().toISOString().split('T')[0]"
-            />
-            <input
-              v-model="selectedPickupTime"
-              type="time"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none text-sm"
-            />
+      <CardContent class="pt-6 space-y-6">
+        <!-- Interactive Calendar -->
+        <div class="border rounded-lg p-4 bg-white">
+          <!-- Calendar Header -->
+          <div class="flex items-center justify-between mb-4">
+            <button 
+              @click="previousMonth"
+              class="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft class="w-5 h-5" />
+            </button>
+            <h3 class="font-semibold text-lg">
+              {{ monthNames[currentMonth.getMonth()] }} {{ currentMonth.getFullYear() }}
+            </h3>
+            <button 
+              @click="nextMonth"
+              class="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+            >
+              <ChevronRight class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- Day Names -->
+          <div class="grid grid-cols-7 gap-1 mb-2">
+            <div 
+              v-for="day in dayNames" 
+              :key="day" 
+              class="text-center text-xs font-medium text-neutral-500 py-1"
+            >
+              {{ day }}
+            </div>
+          </div>
+
+          <!-- Calendar Days -->
+          <div class="grid grid-cols-7 gap-1">
+            <button
+              v-for="(day, idx) in calendarDays"
+              :key="idx"
+              @click="day.date && handleDateClick(day.date, day.disabled)"
+              :disabled="!day.day || day.disabled"
+              :class="[
+                'aspect-square p-1 text-sm rounded-lg transition-all font-medium relative',
+                !day.day ? 'invisible' : '',
+                day.booked ? 'bg-red-100 text-red-700 cursor-not-allowed' : '',
+                day.isCoding && !day.booked ? 'bg-orange-100 text-orange-700 cursor-not-allowed' : '',
+                day.isPast && !day.booked && !day.isCoding ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed' : '',
+                day.date === selectedPickupDate || day.date === selectedReturnDate ? 'bg-[#0081A7] text-white font-bold ring-2 ring-[#0081A7] ring-offset-2' : '',
+                day.date && isDateInRange(day.date) && !day.booked && !day.isCoding ? 'bg-[#00AFB9]/20 text-[#0081A7]' : '',
+                day.date && !day.disabled && day.date !== selectedPickupDate && day.date !== selectedReturnDate && !isDateInRange(day.date) ? 'hover:bg-neutral-100 hover:ring-2 hover:ring-neutral-300' : ''
+              ]"
+            >
+              <div v-if="day.booked" class="absolute inset-0 flex items-center justify-center">
+                <div class="w-0.5 h-full bg-red-500 rotate-45"></div>
+              </div>
+              <div v-if="day.isCoding && !day.booked" class="absolute inset-0 flex items-center justify-center">
+                <div class="w-0.5 h-full bg-orange-500 rotate-45"></div>
+              </div>
+              <span :class="(day.booked || day.isCoding) ? 'relative z-10' : ''">{{ day.day }}</span>
+            </button>
+          </div>
+
+          <!-- Legend -->
+          <div class="mt-4 pt-4 border-t grid grid-cols-2 gap-3 text-xs">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-[#0081A7] rounded ring-2 ring-[#0081A7] ring-offset-1"></div>
+              <span>Selected</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-[#00AFB9]/20 rounded"></div>
+              <span>In Range</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-red-100 rounded relative">
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="w-0.5 h-full bg-red-500 rotate-45"></div>
+                </div>
+              </div>
+              <span>Booked</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-orange-100 rounded relative">
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="w-0.5 h-full bg-orange-500 rotate-45"></div>
+                </div>
+              </div>
+              <span>Coding Day</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 bg-neutral-100 rounded"></div>
+              <span>Past</span>
+            </div>
           </div>
         </div>
 
-        <!-- Return Date & Time -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2">
-            <Calendar class="w-4 h-4 inline mr-1" />
-            Return Date & Time
-          </label>
-          <div class="grid grid-cols-2 gap-2">
-            <input
-              v-model="selectedReturnDate"
-              type="date"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none text-sm"
-              :min="selectedPickupDate || new Date().toISOString().split('T')[0]"
-            />
-            <input
-              v-model="selectedReturnTime"
-              type="time"
-              class="px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none text-sm"
-            />
+        <!-- Selected Dates Display -->
+        <div 
+          v-if="selectedPickupDate || selectedReturnDate" 
+          class="p-4 bg-[#0081A7]/5 rounded-lg border border-[#0081A7]/20"
+        >
+          <div class="space-y-2 text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-neutral-600">Pickup:</span>
+              <span class="font-semibold text-[#0081A7]">
+                {{ selectedPickupDate ? formatDate(selectedPickupDate) : 'Not selected' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-neutral-600">Return:</span>
+              <span class="font-semibold text-[#0081A7]">
+                {{ selectedReturnDate ? formatDate(selectedReturnDate) : 'Not selected' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Bookings -->
+        <div v-if="activeBookings.length > 0" class="pt-4 border-t">
+          <h4 class="text-sm font-semibold text-neutral-700 mb-3 flex items-center gap-2">
+            <AlertCircle class="w-4 h-4 text-red-500" />
+            Unavailable Dates
+          </h4>
+          <div class="space-y-2 max-h-32 overflow-y-auto">
+            <div 
+              v-for="booking in activeBookings" 
+              :key="booking.id" 
+              class="p-2 bg-red-50 border border-red-200 rounded text-xs"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-medium text-red-800 truncate">
+                  {{ formatDate(booking.start_date) }} - {{ formatDate(booking.end_date) }}
+                </span>
+                <span class="text-red-600 text-[10px] font-semibold uppercase">
+                  {{ booking.status }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -117,7 +342,7 @@ const handleBooking = () => {
             <span class="font-semibold">₱{{ totalPrice.toLocaleString() }}</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-neutral-600">Service fee</span>
+            <span class="text-neutral-600">Service fee (5%)</span>
             <span class="font-semibold">₱{{ serviceFee.toLocaleString() }}</span>
           </div>
           <div class="flex justify-between pt-2 border-t font-bold text-lg">
@@ -130,10 +355,10 @@ const handleBooking = () => {
       <CardFooter class="flex flex-col gap-2">
         <button
           @click="handleBooking"
-          :disabled="!available"
+          :disabled="!canBook"
           class="w-full py-3 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto']"
         >
-          {{ available ? 'Book Now' : 'Not Available' }}
+          {{ canBook ? 'Book Now' : 'Select Dates on Calendar' }}
         </button>
         <p class="text-xs text-center text-neutral-500">
           You won't be charged yet
@@ -141,7 +366,7 @@ const handleBooking = () => {
       </CardFooter>
     </Card>
 
-    <!-- Quick Info -->
+    <!-- Quick Info Card -->
     <Card class="mt-4 bg-neutral-50">
       <CardContent class="pt-6">
         <div class="space-y-3 text-sm">

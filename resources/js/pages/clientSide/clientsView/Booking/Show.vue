@@ -23,6 +23,13 @@ import { Button } from '@/components/ui/button/index';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
+interface BookedDate {
+  id: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
+
 interface Host {
   name: string;
   verified: boolean;
@@ -50,6 +57,13 @@ interface Insurance {
   details: string;
 }
 
+interface Document {
+  id: number;
+  type: string;
+  url: string;
+  full_url: string;
+}
+
 interface Vehicle {
   id: number;
   name: string;
@@ -63,13 +77,15 @@ interface Vehicle {
   rating: number;
   reviews: number;
   host: Host;
-  available: boolean;
+  bookedDates: BookedDate[];
+  codingDays?: number[];
   featured: boolean;
   description: string;
   features: string[];
   specifications: Specifications;
   rules: string[];
   insurance: Insurance;
+  documents?: Document[];
 }
 
 interface Props {
@@ -114,6 +130,13 @@ const shareVehicle = () => {
     alert('Link copied to clipboard!');
   }
 };
+
+// Get day name from coding day number
+const getCodingDayName = computed(() => {
+  if (!props.vehicle.codingDays || props.vehicle.codingDays.length === 0) return null;
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return props.vehicle.codingDays.map(day => dayNames[day]).join(', ');
+});
 </script>
 
 <template>
@@ -161,6 +184,9 @@ const shareVehicle = () => {
                 </Badge>
                 <Badge v-if="vehicle.featured" class="bg-[#00AFB9] hover:bg-[#00AFB9]/90 text-white border-0">
                   Featured
+                </Badge>
+                <Badge v-if="getCodingDayName" class="bg-orange-500 hover:bg-orange-600 text-white border-0">
+                  Coding: {{ getCodingDayName }}
                 </Badge>
               </div>
 
@@ -240,6 +266,22 @@ const shareVehicle = () => {
               </Badge>
             </div>
           </div>
+
+          <!-- Coding Day Notice -->
+          <Card v-if="getCodingDayName" class="border-orange-200 bg-orange-50">
+            <CardContent class="pt-6">
+              <div class="flex items-start gap-3">
+                <AlertCircle class="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p class="font-semibold text-orange-900">Number Coding Notice</p>
+                  <p class="text-sm text-orange-700 mt-1">
+                    This vehicle is subject to number coding restrictions on <strong>{{ getCodingDayName }}</strong>. 
+                    These dates will be unavailable for booking.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <!-- Key Specifications -->
           <Card>
@@ -419,13 +461,14 @@ const shareVehicle = () => {
         </div>
 
         <!-- Right Column: Booking Card -->
-           <div class="lg:col-span-1">
-            <BookingCard
-              :vehicle-id="vehicle.id"
-              :price="vehicle.price"
-              :available="vehicle.available"
-            />
-          </div>
+        <div class="lg:col-span-1">
+          <BookingCard
+            :vehicle-id="vehicle.id"
+            :price="vehicle.price"
+            :booked-dates="vehicle.bookedDates"
+            :coding-days="vehicle.codingDays"
+          />
+        </div>
       </div>
     </div>
   </div>

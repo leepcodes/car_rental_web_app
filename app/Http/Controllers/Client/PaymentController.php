@@ -1,13 +1,16 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Client;
 
+use App\Http\Controllers\Controller;
+use App\Models\Vehicle_Attachment;
 use Illuminate\Http\Request;
 use App\Models\Vehicle;
 use App\Models\Booking;
 use App\Services\PaymentService;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Storage;
  
 class PaymentController extends Controller
 {
@@ -26,11 +29,17 @@ class PaymentController extends Controller
                 'return_date' => $bookingDetails['return_date'],
                 'price_per_day' => $vehicle->price ?? 0,
             ]);
+                
+            // Get the first vehicle_photo attachment
+            $vehiclePhotos = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
+            ->where('attachment_type', 'vehicle_photo')
+            ->orderBy('id', 'asc')
+            ->first()  ;
 
             $responseData = [
                 'vehicleId' => $vehicle->id,
                 'vehicleName' => "{$vehicle->brand} {$vehicle->model} ({$vehicle->year})",
-                'vehicleImage' => PaymentService::getVehicleImage($vehicle->id),
+                'vehicleImage' => $vehiclePhotos ? Storage::url($vehiclePhotos->attachment_url) : '/placeholder-vehicle.jpg',
                 'vehicleType' => $vehicle->body_type ?? 'Vehicle',
                 'pricePerDay' => $pricing['price_per_day'],
                 'pickupDate' => $bookingDetails['pickup_date'],

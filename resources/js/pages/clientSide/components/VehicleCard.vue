@@ -20,7 +20,7 @@ interface Vehicle {
   reviews: number;
   host: string;
   hostVerified: boolean;
-  available: boolean;
+  active: boolean; // Changed from 'available' to 'active'
   featured: boolean;
 }
 
@@ -39,15 +39,15 @@ const emit = defineEmits<{
 <template>
   <Card 
     :class="[
-      'overflow-hidden transition-all duration-300',
-      vehicle.available ? 'hover:shadow-xl group cursor-pointer' : 'opacity-75 cursor-not-allowed'
+      'overflow-hidden transition-all duration-300 bg-neutral-700',
+      vehicle.active ? 'hover:shadow-xl group cursor-pointer' : 'opacity-75 cursor-not-allowed'
     ]"
   >
     <!-- Image Section -->
     <component 
-      :is="vehicle.available ? Link : 'div'" 
-      :href="vehicle.available ? `/client/booking/${vehicle.id}` : undefined"
-      :class="vehicle.available ? 'block' : 'block pointer-events-none'"
+      :is="vehicle.active ? Link : 'div'" 
+      :href="vehicle.active ? `/client/booking/${vehicle.id}` : undefined"
+      :class="vehicle.active ? 'block' : 'block pointer-events-none'"
     >
       <div class="relative aspect-[4/3] overflow-hidden">
         <img
@@ -55,16 +55,16 @@ const emit = defineEmits<{
           :alt="vehicle.name"
           :class="[
             'w-full h-full object-cover transition-transform duration-300',
-            vehicle.available ? 'group-hover:scale-105' : 'grayscale-[50%]'
+            vehicle.active ? 'group-hover:scale-105' : 'grayscale-[50%]'
           ]"
         />
         
         <!-- Badges -->
         <div class="absolute top-3 left-3 flex flex-col gap-2">
-          <!-- Unavailable Badge - Priority -->
-          <Badge v-if="!vehicle.available" class="bg-red-500 text-white hover:bg-red-600 shadow-lg">
+          <!-- Inactive Badge - Priority -->
+          <Badge v-if="!vehicle.active" class="bg-red-500 text-white hover:bg-red-600 shadow-lg">
             <XCircle class="w-3 h-3 mr-1" />
-            Not Available
+            Not Active
           </Badge>
           
           <!-- Type Badge -->
@@ -73,14 +73,14 @@ const emit = defineEmits<{
           </Badge>
           
           <!-- Featured Badge -->
-          <Badge v-if="vehicle.featured && vehicle.available" class="bg-amber-500 hover:bg-amber-600 shadow-md">
+          <Badge v-if="vehicle.featured && vehicle.active" class="bg-amber-500 hover:bg-amber-600 shadow-md">
             ⭐ Featured
           </Badge>
         </div>
 
-        <!-- Favorite Button - Only if available -->
+        <!-- Favorite Button - Only if active -->
         <Button
-          v-if="vehicle.available"
+          v-if="vehicle.active"
           size="icon"
           variant="ghost"
           class="absolute top-3 right-3 bg-white/90 hover:bg-white z-10 shadow-lg hover:scale-110 transition-transform"
@@ -97,16 +97,16 @@ const emit = defineEmits<{
     </component>
 
     <component 
-      :is="vehicle.available ? Link : 'div'" 
-      :href="vehicle.available ? `/client/booking/${vehicle.id}` : undefined"
-      :class="vehicle.available ? 'block' : 'block pointer-events-none'"
+      :is="vehicle.active ? Link : 'div'" 
+      :href="vehicle.active ? `/client/booking/${vehicle.id}` : undefined"
+      :class="vehicle.active ? 'block' : 'block pointer-events-none'"
     >
       <CardHeader class="pb-3">
         <div class="flex items-start justify-between gap-2">
           <div class="flex-1 min-w-0">
             <CardTitle :class="[
               'text-lg truncate transition-colors',
-              vehicle.available ? 'group-hover:text-[#0081A7]' : 'text-neutral-500'
+              vehicle.active ? 'group-hover:text-[#0081A7]' : 'text-neutral-500'
             ]">
               {{ vehicle.name }}
             </CardTitle>
@@ -117,8 +117,8 @@ const emit = defineEmits<{
           </div>
         </div>
 
-        <!-- Rating - Only show if available -->
-        <div v-if="vehicle.available" class="flex items-center gap-2 mt-2">
+        <!-- Rating - Only show if active -->
+        <div v-if="vehicle.active" class="flex items-center gap-2 mt-2">
           <div class="flex items-center gap-1">
             <Star class="w-4 h-4 fill-amber-400 text-amber-400" />
             <span class="font-semibold text-sm">{{ vehicle.rating }}</span>
@@ -130,19 +130,19 @@ const emit = defineEmits<{
       </CardHeader>
 
       <CardContent class="pb-3">
-        <!-- Unavailable Message -->
+        <!-- Inactive Message -->
         <div 
-          v-if="!vehicle.available" 
+          v-if="!vehicle.active" 
           class="flex items-center justify-center p-6 bg-red-50 border border-red-200 rounded-lg"
         >
           <div class="text-center">
             <XCircle class="w-8 h-8 text-red-500 mx-auto mb-2" />
-            <p class="text-sm font-semibold text-red-900">Currently Unavailable</p>
-            <p class="text-xs text-red-700 mt-1">This vehicle is not available for booking</p>
+            <p class="text-sm font-semibold text-red-900">Vehicle Not Active</p>
+            <p class="text-xs text-red-700 mt-1">This vehicle is currently inactive</p>
           </div>
         </div>
 
-        <!-- Available Vehicle Details -->
+        <!-- Active Vehicle Details -->
         <template v-else>
           <!-- Host Info -->
           <div class="flex items-center gap-2 mb-3 pb-3 border-b">
@@ -179,7 +179,7 @@ const emit = defineEmits<{
         <div class="flex items-baseline gap-1">
           <span :class="[
             'text-2xl font-bold',
-            vehicle.available ? 'text-[#0081A7]' : 'text-neutral-400'
+            vehicle.active ? 'text-[#0081A7]' : 'text-neutral-400'
           ]">
             ₱{{ vehicle.price.toLocaleString() }}
           </span>
@@ -188,16 +188,16 @@ const emit = defineEmits<{
       </div>
       <Button 
         size="sm"
-        :disabled="!vehicle.available"
+        :disabled="!vehicle.active"
         :class="[
           'transition-all',
-          vehicle.available 
+          vehicle.active 
             ? 'bg-gradient-to-r from-[#0081A7] to-[#00AFB9] hover:shadow-lg hover:scale-105' 
             : 'bg-neutral-300 cursor-not-allowed'
         ]"
-        @click.stop="vehicle.available && emit('book', vehicle.id)"
+        @click.stop="vehicle.active && emit('book', vehicle.id)"
       >
-        {{ vehicle.available ? 'Book Now' : 'Unavailable' }}
+        {{ vehicle.active ? 'Book Now' : 'Inactive' }}
       </Button>
     </CardFooter>
   </Card>

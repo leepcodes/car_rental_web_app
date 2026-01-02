@@ -105,14 +105,8 @@ class PaymentService
                 'notes' => $data['notes'] ?? null,
             ];
 
-            $booking = Booking::create($bookingData);
-
-            // Update vehicle availability
-            Log::info('→ Updating vehicle availability...');
-            DB::table('vehicles')
-                ->where('id', $data['vehicle_id'])
-                ->update(['is_available' => false]);
-
+            $booking = Booking::create($bookingData);  
+ 
             $referenceNumber = self::generateReferenceNumber();
 
             $paymentData = [

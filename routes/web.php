@@ -1,13 +1,13 @@
 <?php
 
-use App\Http\Controllers\ListingController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\Client\ListingController;
+use App\Http\Controllers\Client\PaymentController;
+use App\Http\Controllers\Operator\VehicleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
-use App\Http\Controllers\ClientProfileController;
-use App\Http\Controllers\OperatorProfileController;
+use App\Http\Controllers\Client\ClientProfileController;
+use App\Http\Controllers\Operator\OperatorProfileController;
 use App\Http\Controllers\VerificationController;
 
 // Public routes
