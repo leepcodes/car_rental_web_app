@@ -8,13 +8,16 @@ import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import { Form, Head } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { Eye, EyeOff } from 'lucide-vue-next';
 
 defineProps<{
     status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
 }>();
+
+const showPassword = ref(false);
 </script>
 
 <template>
@@ -119,30 +122,28 @@ defineProps<{
                                     Forgot password?
                                 </TextLink>
                             </div>
-                            <Input
-                                id="password"
-                                type="password"
-                                name="password"
-                                required
-                                :tabindex="2"
-                                autocomplete="current-password"
-                                placeholder="••••••••"
-                                class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11"
-                                style="font-family: 'Roboto', sans-serif"
-                            />
-                        </div>
-
-                        <!-- Remember Me -->
-                        <div class="flex items-center justify-between">
-                            <Label for="remember" class="flex items-center space-x-3 text-white cursor-pointer" style="font-family: 'Roboto', sans-serif">
-                                <Checkbox 
-                                    id="remember" 
-                                    name="remember" 
-                                    :tabindex="3"
-                                    class="border-white/30 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                            <div class="relative">
+                                <Input
+                                    id="password"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    name="password"
+                                    required
+                                    :tabindex="2"
+                                    autocomplete="current-password"
+                                    placeholder="••••••••"
+                                    class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11 pr-10"
+                                    style="font-family: 'Roboto', sans-serif"
                                 />
-                                <span class="text-sm">Remember me</span>
-                            </Label>
+                                <button
+                                    type="button"
+                                    @click="showPassword = !showPassword"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-300 hover:text-white transition-colors"
+                                    :tabindex="-1"
+                                >
+                                    <Eye v-if="!showPassword" :size="20" />
+                                    <EyeOff v-else :size="20" />
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Submit Button - Custom HTML Button -->
@@ -210,6 +211,22 @@ defineProps<{
 .bg-grid-white\/\[0\.02\] {
   background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+/* Hide browser's default password reveal icon */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="text"]::-ms-reveal,
+input[type="text"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
 }
 
 @keyframes pulse {

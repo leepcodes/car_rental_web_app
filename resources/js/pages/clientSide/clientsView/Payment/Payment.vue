@@ -308,15 +308,15 @@ const handlePayNow = () => {
         <!-- Left Column: Forms -->
         <div class="lg:col-span-2 space-y-6">
           <!-- Rental Details Card -->
-          <Card class="border-2 border-[#0081A7]/20">
-            <CardHeader class="bg-gradient-to-r from-[#0081A7]/10 to-[#00AFB9]/10">
-              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2">
-                <Calendar class="w-5 h-5 text-[#0081A7]" />
+          <Card class="border-2 border-neutral-600 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
+            <CardHeader class="bg-gradient-to-r from-neutral-600 via-neutral-700 to-neutral-900">
+              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2 text-white">
+                <Calendar class="w-5 h-5 text-blue-400" />
                 Rental Details
               </CardTitle>
             </CardHeader>
             <CardContent class="pt-6">
-              <div class="flex gap-4 mb-6 p-4 bg-neutral-50 rounded-lg">
+              <div class="flex gap-4 mb-6 p-4 bg-neutral-800 rounded-lg">
                 <img
                   :src="vehicleImage"
                   :alt="vehicleName"
@@ -324,42 +324,42 @@ const handlePayNow = () => {
                 />
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-1">
-                    <h3 class="text-lg font-bold text-neutral-900">{{ vehicleName }}</h3>
-                    <Badge class="bg-[#0081A7] text-white border-0">{{ vehicleType }}</Badge>
+                    <h3 class="text-lg font-bold text-white">{{ vehicleName }}</h3>
+                    <Badge class="bg-gradient-to-r from-blue-400 to-cyan-400 text-white border-0">{{ vehicleType }}</Badge>
                   </div>
-                  <p class="text-sm text-neutral-600">
+                  <p class="text-sm text-neutral-300">
                     ₱{{ pricePerDayNum?.toLocaleString() }} per day
                   </p>
                 </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="p-4 bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg">
-                  <div class="flex items-center gap-2 text-[#0081A7] mb-2">
+                <div class="p-4 bg-neutral-800 rounded-lg">
+                  <div class="flex items-center gap-2 text-blue-400 mb-2">
                     <Calendar class="w-4 h-4" />
                     <span class="text-sm font-semibold">Pickup</span>
                   </div>
-                  <p class="font-bold text-neutral-900">{{ formatDate(pickupDate || '') }}</p>
-                  <p class="text-sm text-neutral-600 flex items-center gap-1 mt-1">
+                  <p class="font-bold text-white">{{ formatDate(pickupDate || '') }}</p>
+                  <p class="text-sm text-neutral-300 flex items-center gap-1 mt-1">
                     <Clock class="w-3 h-3" />
                     {{ pickupTime }}
                   </p>
                 </div>
-                <div class="p-4 bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg">
-                  <div class="flex items-center gap-2 text-[#0081A7] mb-2">
+                <div class="p-4 bg-neutral-800 rounded-lg">
+                  <div class="flex items-center gap-2 text-blue-400 mb-2">
                     <Calendar class="w-4 h-4" />
                     <span class="text-sm font-semibold">Return</span>
                   </div>
-                  <p class="font-bold text-neutral-900">{{ formatDate(returnDate || '') }}</p>
-                  <p class="text-sm text-neutral-600 flex items-center gap-1 mt-1">
+                  <p class="font-bold text-white">{{ formatDate(returnDate || '') }}</p>
+                  <p class="text-sm text-neutral-300 flex items-center gap-1 mt-1">
                     <Clock class="w-3 h-3" />
                     {{ returnTime }}
                   </p>
                 </div>
               </div>
 
-              <div class="mt-4 p-3 bg-[#00AFB9]/10 rounded-lg border border-[#00AFB9]/30">
-                <p class="text-sm text-neutral-700">
+              <div class="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-400/30">
+                <p class="text-sm text-neutral-200">
                   <span class="font-semibold">Total Duration:</span> {{ totalDaysNum || 0 }} day{{ (totalDaysNum || 0) > 1 ? 's' : '' }}
                 </p>
               </div>
@@ -367,13 +367,13 @@ const handlePayNow = () => {
           </Card>
 
           <!-- Pickup Location Card -->
-          <Card>
+          <Card class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 border-2 border-neutral-600">
             <CardHeader>
-              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2">
-                <MapPin class="w-5 h-5 text-[#0081A7]" />
+              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2 text-white">
+                <MapPin class="w-5 h-5 text-blue-400" />
                 Pickup Location
               </CardTitle>
-              <CardDescription>Vehicle will be available at this location</CardDescription>
+              <CardDescription class="text-neutral-300">Vehicle will be available at this location</CardDescription>
             </CardHeader>
             <CardContent class="space-y-4">
               <!-- Mock Map Display -->
@@ -395,12 +395,12 @@ const handlePayNow = () => {
               </div>
 
               <!-- Location Details -->
-              <div class="p-4 bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg border border-[#0081A7]/30">
+              <div class="p-4 bg-neutral-800 rounded-lg border border-neutral-600">
                 <div class="flex items-start gap-3">
-                  <Navigation class="w-5 h-5 text-[#0081A7] flex-shrink-0 mt-0.5" />
+                  <Navigation class="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                   <div class="flex-1">
-                    <p class="font-semibold text-neutral-900 mb-1">{{ mockLocation.address }}</p>
-                    <p class="text-xs text-neutral-600">
+                    <p class="font-semibold text-white mb-1">{{ mockLocation.address }}</p>
+                    <p class="text-xs text-neutral-300">
                       Coordinates: {{ mockLocation.lat }}, {{ mockLocation.lng }}
                     </p>
                   </div>
@@ -409,14 +409,14 @@ const handlePayNow = () => {
 
               <!-- Additional Notes -->
               <div>
-                <label class="block text-sm font-medium text-neutral-700 mb-2">
+                <label class="block text-sm font-medium text-white mb-2">
                   Additional Notes (Optional)
                 </label>
                 <textarea
                   v-model="notes"
                   rows="3"
                   placeholder="Any special requests or requirements?"
-                  class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none resize-none"
+                  class="w-full px-4 py-3 bg-neutral-800 border border-neutral-600 text-white placeholder:text-neutral-400 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none resize-none"
                   :disabled="isSubmitting"
                 ></textarea>
               </div>
@@ -424,13 +424,13 @@ const handlePayNow = () => {
           </Card>
 
           <!-- Payment Method Card -->
-          <Card class="border-2 border-[#0081A7]/20">
-            <CardHeader class="bg-gradient-to-r from-[#0081A7]/10 to-[#00AFB9]/10">
-              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2">
-                <CreditCard class="w-5 h-5 text-[#0081A7]" />
+          <Card class="border-2 border-neutral-600 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
+            <CardHeader class="bg-gradient-to-r from-neutral-600 via-neutral-700 to-neutral-900">
+              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2 text-white">
+                <CreditCard class="w-5 h-5 text-blue-400" />
                 Select Payment Method
               </CardTitle>
-              <CardDescription>Choose how you want to pay</CardDescription>
+              <CardDescription class="text-neutral-300">Choose how you want to pay</CardDescription>
             </CardHeader>
             <CardContent class="pt-6">
               <div class="space-y-3">
@@ -441,26 +441,26 @@ const handlePayNow = () => {
                     'relative p-4 border-2 rounded-lg transition-all',
                     isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
                     selectedPaymentMethod === 'credit_card'
-                      ? 'border-[#0081A7] bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10'
-                      : 'border-neutral-200 hover:border-neutral-300'
+                      ? 'border-blue-400 bg-neutral-800'
+                      : 'border-neutral-600 hover:border-neutral-500'
                   ]"
                 >
                   <div class="flex items-center gap-3">
                     <div :class="[
                       'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
                       selectedPaymentMethod === 'credit_card'
-                        ? 'border-[#0081A7] bg-[#0081A7]'
-                        : 'border-neutral-300'
+                        ? 'border-blue-400 bg-blue-400'
+                        : 'border-neutral-500'
                     ]">
                       <div v-if="selectedPaymentMethod === 'credit_card'" class="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                     <div class="flex-1">
-                      <p class="font-semibold text-neutral-900">Credit/Debit Card</p>
-                      <p class="text-sm text-neutral-600">Visa, Mastercard, American Express</p>
+                      <p class="font-semibold text-white">Credit/Debit Card</p>
+                      <p class="text-sm text-neutral-300">Visa, Mastercard, American Express</p>
                     </div>
-                    <CreditCard class="w-6 h-6" :class="selectedPaymentMethod === 'credit_card' ? 'text-[#0081A7]' : 'text-neutral-400'" />
+                    <CreditCard class="w-6 h-6" :class="selectedPaymentMethod === 'credit_card' ? 'text-blue-400' : 'text-neutral-500'" />
                   </div>
-                  <Badge v-if="selectedPaymentMethod === 'credit_card'" class="absolute top-2 right-2 bg-[#00AFB9] text-white border-0">
+                  <Badge v-if="selectedPaymentMethod === 'credit_card'" class="absolute top-2 right-2 bg-gradient-to-r from-blue-400 to-cyan-400 text-white border-0">
                     Selected
                   </Badge>
                 </div>
@@ -472,28 +472,28 @@ const handlePayNow = () => {
                     'relative p-4 border-2 rounded-lg transition-all',
                     isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
                     selectedPaymentMethod === 'gcash'
-                      ? 'border-[#0081A7] bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10'
-                      : 'border-neutral-200 hover:border-neutral-300'
+                      ? 'border-blue-400 bg-neutral-800'
+                      : 'border-neutral-600 hover:border-neutral-500'
                   ]"
                 >
                   <div class="flex items-center gap-3">
                     <div :class="[
                       'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
                       selectedPaymentMethod === 'gcash'
-                        ? 'border-[#0081A7] bg-[#0081A7]'
-                        : 'border-neutral-300'
+                        ? 'border-blue-400 bg-blue-400'
+                        : 'border-neutral-500'
                     ]">
                       <div v-if="selectedPaymentMethod === 'gcash'" class="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                     <div class="flex-1">
-                      <p class="font-semibold text-neutral-900">GCash</p>
-                      <p class="text-sm text-neutral-600">Pay via GCash e-wallet</p>
+                      <p class="font-semibold text-white">GCash</p>
+                      <p class="text-sm text-neutral-300">Pay via GCash e-wallet</p>
                     </div>
                     <div class="w-8 h-8 bg-blue-500 rounded flex items-center justify-center text-white text-xs font-bold">
                       G
                     </div>
                   </div>
-                  <Badge v-if="selectedPaymentMethod === 'gcash'" class="absolute top-2 right-2 bg-[#00AFB9] text-white border-0">
+                  <Badge v-if="selectedPaymentMethod === 'gcash'" class="absolute top-2 right-2 bg-gradient-to-r from-blue-400 to-cyan-400 text-white border-0">
                     Selected
                   </Badge>
                 </div>
@@ -505,28 +505,28 @@ const handlePayNow = () => {
                     'relative p-4 border-2 rounded-lg transition-all',
                     isSubmitting ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
                     selectedPaymentMethod === 'paymaya'
-                      ? 'border-[#0081A7] bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10'
-                      : 'border-neutral-200 hover:border-neutral-300'
+                      ? 'border-blue-400 bg-neutral-800'
+                      : 'border-neutral-600 hover:border-neutral-500'
                   ]"
                 >
                   <div class="flex items-center gap-3">
                     <div :class="[
                       'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all',
                       selectedPaymentMethod === 'paymaya'
-                        ? 'border-[#0081A7] bg-[#0081A7]'
-                        : 'border-neutral-300'
+                        ? 'border-blue-400 bg-blue-400'
+                        : 'border-neutral-500'
                     ]">
                       <div v-if="selectedPaymentMethod === 'paymaya'" class="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                     <div class="flex-1">
-                      <p class="font-semibold text-neutral-900">PayMaya</p>
-                      <p class="text-sm text-neutral-600">Pay via PayMaya e-wallet</p>
+                      <p class="font-semibold text-white">PayMaya</p>
+                      <p class="text-sm text-neutral-300">Pay via PayMaya e-wallet</p>
                     </div>
                     <div class="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-white text-xs font-bold">
                       PM
                     </div>
                   </div>
-                  <Badge v-if="selectedPaymentMethod === 'paymaya'" class="absolute top-2 right-2 bg-[#00AFB9] text-white border-0">
+                  <Badge v-if="selectedPaymentMethod === 'paymaya'" class="absolute top-2 right-2 bg-gradient-to-r from-blue-400 to-cyan-400 text-white border-0">
                     Selected
                   </Badge>
                 </div>
@@ -545,19 +545,19 @@ const handlePayNow = () => {
           </Card>
 
           <!-- Terms and Conditions -->
-          <Card :class="{ 'border-red-300': validationErrors.length > 0 && !agreeToTerms.valueOf() }" class="border-2">
+          <Card :class="{ 'border-red-500': validationErrors.length > 0 && !agreeToTerms.valueOf() }" class="border-2 border-neutral-600 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
             <CardContent class="pt-6">
               <div class="flex items-start gap-3">
                 <input
                   v-model="agreeToTerms"
                   type="checkbox"
                   id="terms"
-                  class="mt-1 w-4 h-4 text-[#0081A7] border-neutral-300 rounded focus:ring-[#00AFB9]"
+                  class="mt-1 w-4 h-4 text-blue-400 border-neutral-500 rounded focus:ring-blue-400 bg-neutral-800"
                   :disabled="isSubmitting"
                 />
-                <label for="terms" class="text-sm text-neutral-700 cursor-pointer">
-                  I agree to the <a href="#" class="text-[#0081A7] hover:underline font-semibold">Terms and Conditions</a> and 
-                  <a href="#" class="text-[#0081A7] hover:underline font-semibold">Rental Agreement</a>. 
+                <label for="terms" class="text-sm text-neutral-200 cursor-pointer">
+                  I agree to the <a href="#" class="text-blue-400 hover:underline font-semibold">Terms and Conditions</a> and 
+                  <a href="#" class="text-blue-400 hover:underline font-semibold">Rental Agreement</a>. 
                   I understand the security deposit and cancellation policy.
                 </label>
               </div>
@@ -568,48 +568,48 @@ const handlePayNow = () => {
         <!-- Right Column: Price Summary -->
         <div class="lg:col-span-1">
           <div class="sticky top-24">
-            <Card class="border-2 border-[#0081A7]/20 shadow-xl">
-              <CardHeader class="bg-gradient-to-br from-[#0081A7] to-[#00AFB9] text-white">
+            <Card class="border-2 border-neutral-600 shadow-xl bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
+              <CardHeader class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 text-white">
                 <CardTitle class="text-xl font-['Roboto']">Booking Summary</CardTitle>
               </CardHeader>
               <CardContent class="pt-6 space-y-4">
                 <div class="space-y-3">
                   <div class="flex justify-between text-sm">
-                    <span class="text-neutral-600">Vehicle Rental</span>
-                    <span class="font-semibold">₱{{ subtotalNum?.toLocaleString() }}</span>
+                    <span class="text-neutral-300">Vehicle Rental</span>
+                    <span class="font-semibold text-white">₱{{ subtotalNum?.toLocaleString() }}</span>
                   </div>
                   <div class="flex justify-between text-sm">
-                    <span class="text-neutral-600">Service Fee (5%)</span>
-                    <span class="font-semibold">₱{{ serviceFeeNum?.toLocaleString() }}</span>
+                    <span class="text-neutral-300">Service Fee (5%)</span>
+                    <span class="font-semibold text-white">₱{{ serviceFeeNum?.toLocaleString() }}</span>
                   </div>
-                  <div class="flex justify-between text-sm text-neutral-500">
+                  <div class="flex justify-between text-sm text-neutral-400">
                     <span>Price per day</span>
                     <span>₱{{ pricePerDayNum?.toLocaleString() }}</span>
                   </div>
-                  <div class="flex justify-between text-sm text-neutral-500">
+                  <div class="flex justify-between text-sm text-neutral-400">
                     <span>Number of days</span>
                     <span>{{ totalDaysNum || 0 }} day{{ (totalDaysNum || 0) > 1 ? 's' : '' }}</span>
                   </div>
                 </div>
 
-                <div class="pt-4 border-t-2 border-dashed">
+                <div class="pt-4 border-t-2 border-dashed border-neutral-600">
                   <div class="flex justify-between items-center">
-                    <span class="text-lg font-bold text-neutral-900">Total Amount</span>
-                    <span class="text-2xl font-bold text-[#0081A7]">₱{{ totalPriceNum?.toLocaleString() }}</span>
+                    <span class="text-lg font-bold text-white">Total Amount</span>
+                    <span class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">₱{{ totalPriceNum?.toLocaleString() }}</span>
                   </div>
                 </div>
 
                 <div class="pt-4 space-y-2">
-                  <div class="flex items-center gap-2 text-sm text-neutral-600">
-                    <CheckCircle class="w-4 h-4 text-[#00AFB9]" />
+                  <div class="flex items-center gap-2 text-sm text-neutral-300">
+                    <CheckCircle class="w-4 h-4 text-blue-400" />
                     <span>Free cancellation within 24 hours</span>
                   </div>
-                  <div class="flex items-center gap-2 text-sm text-neutral-600">
-                    <CheckCircle class="w-4 h-4 text-[#00AFB9]" />
+                  <div class="flex items-center gap-2 text-sm text-neutral-300">
+                    <CheckCircle class="w-4 h-4 text-blue-400" />
                     <span>Instant booking confirmation</span>
                   </div>
-                  <div class="flex items-center gap-2 text-sm text-neutral-600">
-                    <CheckCircle class="w-4 h-4 text-[#00AFB9]" />
+                  <div class="flex items-center gap-2 text-sm text-neutral-300">
+                    <CheckCircle class="w-4 h-4 text-blue-400" />
                     <span>Insurance coverage included</span>
                   </div>
                 </div>
@@ -618,7 +618,7 @@ const handlePayNow = () => {
                 <button
                   @click="handlePayNow"
                   :disabled="isSubmitting"
-                  class="w-full py-4 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-bold text-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto'] flex items-center justify-center gap-2"
+                  class="w-full py-4 bg-gradient-to-r from-blue-400 to-cyan-400 text-white rounded-lg font-bold text-lg hover:shadow-lg hover:from-blue-500 hover:to-cyan-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto'] flex items-center justify-center gap-2"
                 >
                   <div v-if="isSubmitting" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <CreditCard v-else class="w-5 h-5" />

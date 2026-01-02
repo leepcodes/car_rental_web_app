@@ -7,10 +7,28 @@ import { login } from '@/routes';
 import { store } from '@/routes/register';
 import { Form, Head } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
-import { Briefcase } from 'lucide-vue-next';
+import { Briefcase, Eye, EyeOff } from 'lucide-vue-next';
 
 const isProcessing = ref(false);
 const selectedUserType = ref('client');
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+const password = ref('');
+
+// Password validation
+const passwordValidation = computed(() => {
+    const pwd = password.value;
+    const hasMinLength = pwd.length >= 8;
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+    const hasNumber = /\d/.test(pwd);
+    
+    return {
+        isValid: hasMinLength && hasSpecialChar && hasNumber,
+        hasMinLength,
+        hasSpecialChar,
+        hasNumber
+    };
+});
 
 // Check URL parameter on component mount
 onMounted(() => {
@@ -174,17 +192,51 @@ const pageSubtitle = computed(() => {
                             <Label for="password" class="text-white text-sm font-medium" style="font-family: 'Roboto', sans-serif">
                                 Password
                             </Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                name="password"
-                                required
-                                :tabindex="3"
-                                autocomplete="new-password"
-                                placeholder="••••••••"
-                                class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11"
-                                style="font-family: 'Roboto', sans-serif"
-                            />
+                            <div class="relative">
+                                <Input
+                                    id="password"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    name="password"
+                                    v-model="password"
+                                    required
+                                    :tabindex="3"
+                                    autocomplete="new-password"
+                                    placeholder="••••••••"
+                                    class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11 pr-10"
+                                    style="font-family: 'Roboto', sans-serif"
+                                />
+                                <button
+                                    type="button"
+                                    @click="showPassword = !showPassword"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-300 hover:text-white transition-colors"
+                                    :tabindex="-1"
+                                >
+                                    <Eye v-if="!showPassword" :size="20" />
+                                    <EyeOff v-else :size="20" />
+                                </button>
+                            </div>
+                            <!-- Password validation hint -->
+                            <div v-if="password && !passwordValidation.isValid" class="text-xs text-neutral-300 bg-white/5 border border-white/10 rounded-lg p-3 space-y-1" style="font-family: 'Roboto', sans-serif">
+                                <p class="font-medium mb-2">Password must contain:</p>
+                                <div class="flex items-center gap-2" :class="passwordValidation.hasMinLength ? 'text-green-400' : 'text-neutral-400'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="passwordValidation.hasMinLength ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
+                                    </svg>
+                                    <span>At least 8 characters</span>
+                                </div>
+                                <div class="flex items-center gap-2" :class="passwordValidation.hasSpecialChar ? 'text-green-400' : 'text-neutral-400'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="passwordValidation.hasSpecialChar ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
+                                    </svg>
+                                    <span>At least 1 special character (!@#$%^&*...)</span>
+                                </div>
+                                <div class="flex items-center gap-2" :class="passwordValidation.hasNumber ? 'text-green-400' : 'text-neutral-400'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="passwordValidation.hasNumber ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
+                                    </svg>
+                                    <span>At least 1 number</span>
+                                </div>
+                            </div>
                             <InputError :message="errors.password" class="text-red-400" />
                         </div>
 
@@ -193,17 +245,28 @@ const pageSubtitle = computed(() => {
                             <Label for="password_confirmation" class="text-white text-sm font-medium" style="font-family: 'Roboto', sans-serif">
                                 Confirm Password
                             </Label>
-                            <Input
-                                id="password_confirmation"
-                                type="password"
-                                name="password_confirmation"
-                                required
-                                :tabindex="4"
-                                autocomplete="new-password"
-                                placeholder="••••••••"
-                                class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11"
-                                style="font-family: 'Roboto', sans-serif"
-                            />
+                            <div class="relative">
+                                <Input
+                                    id="password_confirmation"
+                                    :type="showConfirmPassword ? 'text' : 'password'"
+                                    name="password_confirmation"
+                                    required
+                                    :tabindex="4"
+                                    autocomplete="new-password"
+                                    placeholder="••••••••"
+                                    class="bg-white/10 border-white/20 text-white placeholder:text-neutral-400 focus:border-blue-400 focus:ring-blue-400/20 backdrop-blur-sm h-11 pr-10"
+                                    style="font-family: 'Roboto', sans-serif"
+                                />
+                                <button
+                                    type="button"
+                                    @click="showConfirmPassword = !showConfirmPassword"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-300 hover:text-white transition-colors"
+                                    :tabindex="-1"
+                                >
+                                    <Eye v-if="!showConfirmPassword" :size="20" />
+                                    <EyeOff v-else :size="20" />
+                                </button>
+                            </div>
                             <InputError :message="errors.password_confirmation" class="text-red-400" />
                         </div>
 
@@ -271,6 +334,22 @@ const pageSubtitle = computed(() => {
 .bg-grid-white\/\[0\.02\] {
   background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
+/* Hide browser's default password reveal icon */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="text"]::-ms-reveal,
+input[type="text"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
 }
 
 @keyframes pulse {

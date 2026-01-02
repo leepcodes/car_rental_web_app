@@ -39,7 +39,7 @@ const emit = defineEmits<{
 <template>
   <Card 
     :class="[
-      'overflow-hidden transition-all duration-300 bg-neutral-700',
+      'overflow-hidden transition-all duration-300 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900',
       vehicle.active ? 'hover:shadow-xl group cursor-pointer' : 'opacity-75 cursor-not-allowed'
     ]"
   >
@@ -106,11 +106,11 @@ const emit = defineEmits<{
           <div class="flex-1 min-w-0">
             <CardTitle :class="[
               'text-lg truncate transition-colors',
-              vehicle.active ? 'group-hover:text-[#0081A7]' : 'text-neutral-500'
+              vehicle.active ? 'text-white group-hover:text-blue-400' : 'text-neutral-400'
             ]">
               {{ vehicle.name }}
             </CardTitle>
-            <CardDescription class="flex items-center gap-1 mt-1">
+            <CardDescription class="flex items-center gap-1 mt-1 text-neutral-300">
               <MapPin class="w-3 h-3" />
               {{ vehicle.location }}
             </CardDescription>
@@ -121,9 +121,9 @@ const emit = defineEmits<{
         <div v-if="vehicle.active" class="flex items-center gap-2 mt-2">
           <div class="flex items-center gap-1">
             <Star class="w-4 h-4 fill-amber-400 text-amber-400" />
-            <span class="font-semibold text-sm">{{ vehicle.rating }}</span>
+            <span class="font-semibold text-sm text-white">{{ vehicle.rating }}</span>
           </div>
-          <span class="text-xs text-neutral-500">
+          <span class="text-xs text-neutral-300">
             ({{ vehicle.reviews }} reviews)
           </span>
         </div>
@@ -150,24 +150,24 @@ const emit = defineEmits<{
               <Car class="w-4 h-4 text-neutral-600" />
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium truncate">{{ vehicle.host }}</p>
-              <p v-if="vehicle.hostVerified" class="text-xs text-green-600">✓ Verified Host</p>
+              <p class="text-sm font-medium truncate text-white">{{ vehicle.host }}</p>
+              <p v-if="vehicle.hostVerified" class="text-xs text-green-400">✓ Verified Host</p>
             </div>
           </div>
 
           <!-- Vehicle Specs -->
           <div class="grid grid-cols-3 gap-2 text-center">
             <div class="flex flex-col items-center">
-              <Users class="w-4 h-4 text-neutral-500 mb-1" />
-              <span class="text-xs text-neutral-600">{{ vehicle.passengers }}</span>
+              <Users class="w-4 h-4 text-white mb-1" />
+              <span class="text-xs text-neutral-300">{{ vehicle.passengers }}</span>
             </div>
             <div class="flex flex-col items-center">
-              <Settings class="w-4 h-4 text-neutral-500 mb-1" />
-              <span class="text-xs text-neutral-600 truncate">{{ vehicle.transmission }}</span>
+              <Settings class="w-4 h-4 text-white mb-1" />
+              <span class="text-xs text-neutral-300 truncate">{{ vehicle.transmission }}</span>
             </div>
             <div class="flex flex-col items-center">
-              <Fuel class="w-4 h-4 text-neutral-500 mb-1" />
-              <span class="text-xs text-neutral-600">{{ vehicle.fuel }}</span>
+              <Fuel class="w-4 h-4 text-white mb-1" />
+              <span class="text-xs text-neutral-300">{{ vehicle.fuel }}</span>
             </div>
           </div>
         </template>
@@ -179,11 +179,11 @@ const emit = defineEmits<{
         <div class="flex items-baseline gap-1">
           <span :class="[
             'text-2xl font-bold',
-            vehicle.active ? 'text-[#0081A7]' : 'text-neutral-400'
+            vehicle.active ? 'bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent' : 'text-neutral-400'
           ]">
             ₱{{ vehicle.price.toLocaleString() }}
           </span>
-          <span class="text-sm text-neutral-500">/day</span>
+          <span class="text-sm text-neutral-300">/day</span>
         </div>
       </div>
       <Button 
@@ -192,7 +192,7 @@ const emit = defineEmits<{
         :class="[
           'transition-all',
           vehicle.active 
-            ? 'bg-gradient-to-r from-[#0081A7] to-[#00AFB9] hover:shadow-lg hover:scale-105' 
+            ? 'bg-gradient-to-r from-blue-400 to-cyan-400 hover:shadow-lg hover:scale-105 hover:from-blue-500 hover:to-cyan-500' 
             : 'bg-neutral-300 cursor-not-allowed'
         ]"
         @click.stop="vehicle.active && emit('book', vehicle.id)"

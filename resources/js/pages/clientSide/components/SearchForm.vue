@@ -61,7 +61,7 @@ const handleReset = () => {
         <select
           id="bodyType"
           v-model="bodyType"
-          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:bg-white focus:border-neutral-400 transition-all"
+          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] transition-all"
         >
           <option value="">All Types</option>
           <option value="Sedan">Sedan</option>
@@ -81,7 +81,7 @@ const handleReset = () => {
         <select
           id="fuelType"
           v-model="fuelType"
-          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:bg-white focus:border-neutral-400 transition-all"
+          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] transition-all"
         >
           <option value="">All Fuel Types</option>
           <option value="Gasoline">Gasoline</option>
@@ -99,7 +99,7 @@ const handleReset = () => {
         <select
           id="transmission"
           v-model="transmission"
-          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:bg-white focus:border-neutral-400 transition-all"
+          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] transition-all"
         >
           <option value="">All Transmissions</option>
           <option value="Automatic">Automatic</option>
@@ -115,7 +115,7 @@ const handleReset = () => {
         <select
           id="seatingCapacity"
           v-model="seatingCapacity"
-          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:bg-white focus:border-neutral-400 transition-all"
+          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] transition-all"
         >
           <option value="">All Capacities</option>
           <option value="4">4 Seats</option>
@@ -139,14 +139,14 @@ const handleReset = () => {
           v-model="searchQuery"
           type="text"
           placeholder="Search by brand, model, year, or color..."
-          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:bg-white focus:border-neutral-400 transition-all"
+          class="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-700 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] transition-all"
         />
       </div>
 
       <!-- Search Button -->
       <button
         type="submit"
-        class="bg-neutral-800 text-white rounded-xl hover:bg-neutral-700 active:scale-[0.98] transition-all font-semibold mt-auto py-3.5 px-8 shadow-md shadow-neutral-900/10"
+        class="bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-xl hover:from-[#0081A7]/90 hover:to-[#00AFB9]/90 active:scale-[0.98] transition-all font-semibold mt-auto py-3.5 px-8 shadow-md shadow-neutral-900/10"
       >
         Search
       </button>
@@ -155,7 +155,7 @@ const handleReset = () => {
       <button
         type="button"
         @click="handleReset"
-        class="bg-white text-neutral-700 border border-neutral-300 rounded-xl hover:bg-neutral-50 active:scale-[0.98] transition-all font-semibold mt-auto py-3.5 px-6"
+        class="bg-white text-[#0081A7] border-2 border-[#0081A7] rounded-xl hover:bg-[#0081A7] hover:text-white active:scale-[0.98] transition-all font-semibold mt-auto py-3.5 px-6"
       >
         Reset
       </button>

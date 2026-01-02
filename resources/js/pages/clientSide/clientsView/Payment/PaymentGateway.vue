@@ -285,7 +285,7 @@ const testCredentials = {
   <Head title="Payment Gateway" />
   <AppHeader :can-register="canRegister" />
 
-  <div class="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
+  <div class="min-h-screen py-15 bg-gradient-to-br from-neutral-50 to-neutral-100">
     <!-- Back Button -->
     <div class="bg-white border-b">
       <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-4">

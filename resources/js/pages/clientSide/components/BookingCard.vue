@@ -185,8 +185,8 @@ const formatDate = (dateStr: string): string => {
 
 <template>
   <div class="sticky top-24">
-    <Card class="border-2 border-[#0081A7]/20 shadow-xl">
-      <CardHeader class="bg-gradient-to-br from-[#0081A7] to-[#00AFB9] text-white">
+    <Card class="border-2 border-neutral-600 shadow-xl bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 overflow-hidden">
+      <CardHeader class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 text-white">
         <div class="flex items-baseline gap-2">
           <span class="text-4xl font-bold font-['Roboto']">₱{{ price.toLocaleString() }}</span>
           <span class="text-lg">/day</span>
@@ -203,16 +203,16 @@ const formatDate = (dateStr: string): string => {
           <div class="flex items-center justify-between mb-4">
             <button 
               @click="previousMonth"
-              class="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+              class="p-2 text-blue-500 hover:text-blue-300 rounded-lg transition-colors"
             >
               <ChevronLeft class="w-5 h-5" />
             </button>
-            <h3 class="font-semibold text-lg">
+            <h3 class="font-semibold text-cyan-500 text-lg">
               {{ monthNames[currentMonth.getMonth()] }} {{ currentMonth.getFullYear() }}
             </h3>
             <button 
               @click="nextMonth"
-              class="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+              class="p-2 text-blue-500 hover:text-blue-300 rounded-lg transition-colors"
             >
               <ChevronRight class="w-5 h-5" />
             </button>
@@ -237,14 +237,14 @@ const formatDate = (dateStr: string): string => {
               @click="day.date && handleDateClick(day.date, day.disabled)"
               :disabled="!day.day || day.disabled"
               :class="[
-                'aspect-square p-1 text-sm rounded-lg transition-all font-medium relative',
+                'aspect-square p-1 text-neutral-700 text-sm rounded-lg transition-all font-medium relative',
                 !day.day ? 'invisible' : '',
                 day.booked ? 'bg-red-100 text-red-700 cursor-not-allowed' : '',
                 day.isCoding && !day.booked ? 'bg-orange-100 text-orange-700 cursor-not-allowed' : '',
                 day.isPast && !day.booked && !day.isCoding ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed' : '',
                 day.date === selectedPickupDate || day.date === selectedReturnDate ? 'bg-[#0081A7] text-white font-bold ring-2 ring-[#0081A7] ring-offset-2' : '',
                 day.date && isDateInRange(day.date) && !day.booked && !day.isCoding ? 'bg-[#00AFB9]/20 text-[#0081A7]' : '',
-                day.date && !day.disabled && day.date !== selectedPickupDate && day.date !== selectedReturnDate && !isDateInRange(day.date) ? 'hover:bg-neutral-100 hover:ring-2 hover:ring-neutral-300' : ''
+                day.date && !day.disabled && day.date !== selectedPickupDate && day.date !== selectedReturnDate && !isDateInRange(day.date) ? 'hover:bg-neutral-300 hover:ring-2 hover:ring-neutral-300' : ''
               ]"
             >
               <div v-if="day.booked" class="absolute inset-0 flex items-center justify-center">
@@ -261,11 +261,11 @@ const formatDate = (dateStr: string): string => {
           <div class="mt-4 pt-4 border-t grid grid-cols-2 gap-3 text-xs">
             <div class="flex items-center gap-2">
               <div class="w-6 h-6 bg-[#0081A7] rounded ring-2 ring-[#0081A7] ring-offset-1"></div>
-              <span>Selected</span>
+              <span class="text-[#0081A7]">Selected</span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-6 h-6 bg-[#00AFB9]/20 rounded"></div>
-              <span>In Range</span>
+              <span class="text-[#00AFB9]">In Range</span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-6 h-6 bg-red-100 rounded relative">
@@ -273,7 +273,7 @@ const formatDate = (dateStr: string): string => {
                   <div class="w-0.5 h-full bg-red-500 rotate-45"></div>
                 </div>
               </div>
-              <span>Booked</span>
+              <span class="text-red-500">Booked</span>
             </div>
             <div class="flex items-center gap-2">
               <div class="w-6 h-6 bg-orange-100 rounded relative">
@@ -281,13 +281,13 @@ const formatDate = (dateStr: string): string => {
                   <div class="w-0.5 h-full bg-orange-500 rotate-45"></div>
                 </div>
               </div>
-              <span>Coding Day</span>
+              <span class="text-orange-800">Coding Day</span>
             </div>
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 bg-neutral-100 rounded"></div>
-              <span>Past</span>
+              <div class="w-6 h-6 bg-neutral-300 rounded"></div>
+              <span class="text-neutral-800">Past</span>
             </div>
-          </div>
+          </div>    
         </div>
 
         <!-- Selected Dates Display -->
@@ -297,13 +297,13 @@ const formatDate = (dateStr: string): string => {
         >
           <div class="space-y-2 text-sm">
             <div class="flex items-center justify-between">
-              <span class="text-neutral-600">Pickup:</span>
+              <span class="text-neutral-100">Pickup:</span>
               <span class="font-semibold text-[#0081A7]">
                 {{ selectedPickupDate ? formatDate(selectedPickupDate) : 'Not selected' }}
               </span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-neutral-600">Return:</span>
+              <span class="text-neutral-100">Return:</span>
               <span class="font-semibold text-[#0081A7]">
                 {{ selectedReturnDate ? formatDate(selectedReturnDate) : 'Not selected' }}
               </span>
@@ -336,23 +336,23 @@ const formatDate = (dateStr: string): string => {
         </div>
 
         <!-- Price Breakdown -->
-        <div v-if="totalDays > 0" class="pt-4 border-t space-y-2">
+        <div v-if="totalDays > 0" class="pt-4 border-t border-white/20 space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-neutral-600">₱{{ price.toLocaleString() }} × {{ totalDays }} day{{ totalDays > 1 ? 's' : '' }}</span>
-            <span class="font-semibold">₱{{ totalPrice.toLocaleString() }}</span>
+            <span class="text-white/80">₱{{ price.toLocaleString() }} × {{ totalDays }} day{{ totalDays > 1 ? 's' : '' }}</span>
+            <span class="font-semibold text-white">₱{{ totalPrice.toLocaleString() }}</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-neutral-600">Service fee (5%)</span>
-            <span class="font-semibold">₱{{ serviceFee.toLocaleString() }}</span>
+            <span class="text-white/80">Service fee</span>
+            <span class="font-semibold text-white">₱{{ serviceFee.toLocaleString() }}</span>
           </div>
-          <div class="flex justify-between pt-2 border-t font-bold text-lg">
-            <span>Total</span>
-            <span class="text-[#0081A7]">₱{{ grandTotal.toLocaleString() }}</span>
+          <div class="flex justify-between pt-2 border-t border-white/20 font-bold text-lg">
+            <span class="text-white">Total</span>
+            <span class="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">₱{{ grandTotal.toLocaleString() }}</span>
           </div>
         </div>
       </CardContent>
       
-      <CardFooter class="flex flex-col gap-2">
+      <CardFooter class="flex flex-col gap-2 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
         <button
           @click="handleBooking"
           :disabled="!canBook"
@@ -360,7 +360,7 @@ const formatDate = (dateStr: string): string => {
         >
           {{ canBook ? 'Book Now' : 'Select Dates on Calendar' }}
         </button>
-        <p class="text-xs text-center text-neutral-500">
+        <p class="text-xs text-center text-white/70">
           You won't be charged yet
         </p>
       </CardFooter>
@@ -388,8 +388,39 @@ const formatDate = (dateStr: string): string => {
   </div>
 </template>
 
-<style scoped>
+<style>
 * {
   font-family: 'Roboto', sans-serif;
+}
+
+/* Style date and time input calendar icons to white */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(100%) brightness(100%);
+  cursor: pointer;
+  opacity: 1 !important;
+  inline-size: 20px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(100%) brightness(120%);
+}
+
+/* For Firefox */
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
+}
+
+/* Ensure icons are visible on webkit browsers */
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button {
+  display: none;
+}
+
+input[type="time"]::-webkit-inner-spin-button,
+input[type="time"]::-webkit-clear-button {
+  display: none;
 }
 </style>
