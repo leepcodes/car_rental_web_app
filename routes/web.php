@@ -40,6 +40,10 @@ Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// ✅ Guest/Public routes (no authentication required)
+Route::get('/vehicles', [ListingController::class, 'guestIndex'])->name('vehicles.index');
+Route::get('/vehicles/{id}', [ListingController::class, 'guestShow'])->name('vehicles.show');
+
 // ✅ Client routes
 Route::middleware(['auth', 'role:client'])->group(function () {
         

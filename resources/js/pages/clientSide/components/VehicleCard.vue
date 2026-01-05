@@ -1,7 +1,8 @@
 // components/VehicleCard.vue
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Heart, Star, MapPin, Users, Settings, Fuel, Car, XCircle } from 'lucide-vue-next';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button/index';
 import { Badge } from '@/components/ui/badge/index';
@@ -34,6 +35,20 @@ const emit = defineEmits<{
   toggleFavorite: [id: number];
   book: [id: number];
 }>();
+
+const page = usePage();
+const user = computed(() => page.props.auth?.user);
+
+// Determine the correct route based on authentication status
+const vehicleDetailRoute = computed(() => {
+  if (user.value) {
+    // Authenticated user (client) - use client route
+    return `/client/booking/${props.vehicle.id}`;
+  } else {
+    // Guest user - use public route
+    return `/vehicles/${props.vehicle.id}`;
+  }
+});
 </script>
 
 <template>
@@ -48,7 +63,7 @@ const emit = defineEmits<{
     <!-- Image Section -->
     <component 
       :is="vehicle.active ? Link : 'div'" 
-      :href="vehicle.active ? `/client/booking/${vehicle.id}` : undefined"
+      :href="vehicle.active ? vehicleDetailRoute : undefined"
       :class="vehicle.active ? 'block' : 'block pointer-events-none'"
     >
       <div class="relative aspect-[4/3] overflow-hidden bg-neutral-100">
@@ -100,7 +115,7 @@ const emit = defineEmits<{
 
     <component 
       :is="vehicle.active ? Link : 'div'" 
-      :href="vehicle.active ? `/client/booking/${vehicle.id}` : undefined"
+      :href="vehicle.active ? vehicleDetailRoute : undefined"
       :class="vehicle.active ? 'block' : 'block pointer-events-none'"
     >
       <CardHeader class="pb-3 bg-white">

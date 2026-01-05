@@ -22,7 +22,7 @@ defineProps<{
 const mobileMenuOpen = ref(false);
 const page = usePage();
 
-const user = computed(() => page.props.auth.user as any);
+const user = computed(() => page.props.auth?.user as any);
 
 const userInitials = computed(() => {
   if (!user.value?.name) return 'U';
@@ -46,12 +46,18 @@ const isOperator = computed(() => {
   return user.value?.user_type === 'operator';
 });
 
+const isGuest = computed(() => {
+  return !user.value;
+});
+
 // Booking link based on user type
 const bookingLink = computed(() => {
   if (isClient.value) {
     return '/client/booking';
+  } else if (isGuest.value) {
+    return '/vehicles'; // Guest route
   }
-  return '/booking';
+  return '/vehicles';
 });
 
 // Navigation links - filtered based on user type
@@ -72,7 +78,7 @@ const navLinks = computed(() => {
 
 // Show "Apply as Operator" button only for guests (not logged in)
 const showApplyAsOperator = computed(() => {
-  return !user.value; // Only show if user is not logged in
+  return isGuest.value;
 });
 
 // Dashboard link based on user type
@@ -80,9 +86,9 @@ const dashboardLink = computed(() => {
   const userType = user.value?.user_type;
   
   if (userType === 'client') {
-    return '/client/booking';
+    return '/client/booking'; // Client bookings page
   } else if (userType === 'operator') {
-    return '/operator/dashboard';
+    return '/operator/dashboard'; // Operator dashboard
   }
   
   return '/';
@@ -96,6 +102,16 @@ const dashboardLabel = computed(() => {
     return 'Dashboard';
   }
   return 'Dashboard';
+});
+
+// Profile link based on user type
+const profileLink = computed(() => {
+  if (isClient.value) {
+    return '/client/profile';
+  } else if (isOperator.value) {
+    return '/operator/profile';
+  }
+  return '/profile';
 });
 </script>
 
@@ -171,7 +187,7 @@ const dashboardLabel = computed(() => {
                 
                 <!-- Profile Link -->
                 <DropdownMenuItem as-child>
-                  <Link :href="isClient ? '/client/profile' : '/operator/profile'" class="cursor-pointer">
+                  <Link :href="profileLink" class="cursor-pointer">
                     <User class="mr-2 h-4 w-4" />
                     <span>My Profile</span>
                   </Link>
@@ -271,7 +287,7 @@ const dashboardLabel = computed(() => {
 
               <!-- Profile Link -->
               <Link 
-                :href="isClient ? '/client/profile' : '/operator/profile'" 
+                :href="profileLink" 
                 class="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors flex items-center gap-2"
                 @click="mobileMenuOpen = false"
               >

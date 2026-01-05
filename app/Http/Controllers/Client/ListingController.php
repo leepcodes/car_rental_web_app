@@ -13,7 +13,10 @@ use Carbon\Carbon;
 
 class ListingController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Get filtered and mapped vehicles
+     */
+    private function getVehicles(Request $request)
     {
         $query = Vehicle::with(['operator', 'operatorLocation'])
             ->where('is_active', true);
@@ -49,13 +52,12 @@ class ListingController extends Controller
             });
         }
 
-        $vehicles = $query->get()->map(function ($vehicle) {
+        return $query->get()->map(function ($vehicle) {
             // Get the first vehicle_photo attachment
             $vehiclePhotos = Vehicle_Attachment::where('vehicle_id', $vehicle->id)
-            ->where('attachment_type', 'vehicle_photo')
-            ->orderBy('id', 'asc')
-            ->first()  ;
-        
+                ->where('attachment_type', 'vehicle_photo')
+                ->orderBy('id', 'asc')
+                ->first();
 
             return [
                 'id' => $vehicle->id,
@@ -81,27 +83,19 @@ class ListingController extends Controller
             ['rating', 'desc'],
         ])
         ->values(); 
-
-        return Inertia::render('clientSide/clientsView/Booking/Listing', [
-            'vehicles' => $vehicles,
-            'filters' => [
-                'body_type' => $request->body_type,
-                'fuel_type' => $request->fuel_type,
-                'transmission' => $request->transmission,
-                'seating_capacity' => $request->seating_capacity,
-                'search' => $request->search,
-            ]
-        ]);
     }
 
-    public function show($id)
+    /**
+     * Get vehicle details with all related data
+     */
+    private function getVehicleDetails($id)
     {
         $vehicle = Vehicle::with(['operator', 'operatorLocation'])
             ->where('id', $id)
             ->where('is_active', true)
             ->firstOrFail();
 
-        // Get all bookings for this vehicle (including completed ones)
+        // Get all bookings for this vehicle
         $bookedDates = Booking::where('vehicle_id', $vehicle->id)
             ->whereIn('status', ['pending', 'confirmed', 'ongoing', 'completed'])
             ->orderBy('start_date', 'desc')
@@ -151,11 +145,10 @@ class ListingController extends Controller
                 'Friday' => 5,
                 'Saturday' => 6,
             ];
-            // Case-insensitive matching
             $codingDayNumber = $dayMap[ucfirst(strtolower($vehicle->coding_day))] ?? null;
         }
 
-        $vehicleData = [
+        return [
             'id' => $vehicle->id,
             'name' => "{$vehicle->brand} {$vehicle->model} {$vehicle->year}",
             'type' => $vehicle->body_type ?? 'Vehicle',
@@ -215,9 +208,37 @@ class ListingController extends Controller
             ],
             'documents' => $documents,
         ];
+    }
 
+    // Client (authenticated) routes
+    public function index(Request $request)
+    {
+        return Inertia::render('clientSide/clientsView/Booking/Listing', [
+            'vehicles' => $this->getVehicles($request),
+            'filters' => $request->only(['body_type', 'fuel_type', 'transmission', 'seating_capacity', 'search']),
+        ]);
+    }
+
+    public function show($id)
+    {
         return Inertia::render('clientSide/clientsView/Booking/Show', [
-            'vehicle' => $vehicleData,
+            'vehicle' => $this->getVehicleDetails($id),
+        ]);
+    }
+
+    // Guest (public) routes
+    public function guestIndex(Request $request)
+    {
+        return Inertia::render('clientSide/Booking', [
+            'vehicles' => $this->getVehicles($request),
+            'filters' => $request->only(['body_type', 'fuel_type', 'transmission', 'seating_capacity', 'search']),
+        ]);
+    }
+
+    public function guestShow($id)
+    {
+        return Inertia::render('clientSide/BookingShow', [
+            'vehicle' => $this->getVehicleDetails($id),
         ]);
     }
 }

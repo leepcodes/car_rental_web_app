@@ -1,7 +1,7 @@
 // pages/booking.vue
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AppHeader from '@/pages/clientSide/components/AppHeader.vue';
 import VehicleCard from '@/pages/clientSide/components/VehicleCard.vue';
 import SearchFilters from '@/pages/clientSide/components/SearchForm.vue';
@@ -38,14 +38,17 @@ interface Props {
   canRegister?: boolean;
   vehicles: Vehicle[];
   filters?: Filters;
+  isGuest?: boolean; // New prop to determine if user is guest
 }
 
 const props = withDefaults(defineProps<Props>(), { 
   canRegister: true,
   vehicles: () => [],
-  filters: () => ({})
+  filters: () => ({}),
+  isGuest: false
 });
 
+const page = usePage();
 const favorites = ref<Set<number>>(new Set());
 const sortBy = ref('featured');
 const showInactive = ref(true);
@@ -67,7 +70,17 @@ const handleBook = (id: number) => {
   }
   
   console.log('Booking vehicle:', vehicle?.name);
-  router.visit(`/client/booking/${id}`);
+  
+  // Check if user is authenticated (guest or client)
+  const isAuthenticated = page.props.auth?.user;
+  
+  if (isAuthenticated) {
+    // Authenticated user - go to client booking page
+    router.visit(`/client/booking/${id}`);
+  } else {
+    // Guest user - go to guest vehicle details
+    router.visit(`/vehicles/${id}`);
+  }
 };
 
 const sortedVehicles = computed(() => {
