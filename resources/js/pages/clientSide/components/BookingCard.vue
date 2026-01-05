@@ -36,7 +36,7 @@ const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Get active bookings
 const activeBookings = computed(() => 
-  props.bookedDates.filter(b => ['pending', 'confirmed', 'ongoing'].includes(b.status))
+  props.bookedDates.filter(b => ['confirmed', 'ongoing'].includes(b.status))
 );
 
 // Check if a specific date is booked
@@ -94,7 +94,7 @@ const calendarDays = computed(() => {
     days.push({
       day,
       date: dateStr,
-      disabled: isPast || isBooked || isCoding,
+      disabled: isPast || isBooked,
       booked: isBooked,
       isPast,
       isCoding
@@ -120,18 +120,18 @@ const handleDateClick = (dateStr: string, disabled: boolean) => {
       selectedPickupDate.value = dateStr;
       selectedReturnDate.value = '';
     } else {
-      // Check if any date in range is booked or coding day
+      // Check if any date in range is booked
       let hasBlockedInRange = false;
       for (let d = new Date(pickupDate); d <= clickedDate; d.setDate(d.getDate() + 1)) {
         const checkDateStr = d.toISOString().split('T')[0];
-        if (isDateBooked(checkDateStr) || isCodingDay(checkDateStr)) {
+        if (isDateBooked(checkDateStr)) {
           hasBlockedInRange = true;
           break;
         }
       }
       
       if (hasBlockedInRange) {
-        alert('Cannot select date range that includes booked dates or coding days');
+        alert('Cannot select date range that includes booked dates');
         return;
       }
       
@@ -251,18 +251,18 @@ const formatDate = (dateStr: string): string => {
                 'aspect-square p-1 text-neutral-900 text-sm rounded-lg transition-all font-medium relative',
                 !day.day ? 'invisible' : '',
                 day.booked ? 'bg-red-50 text-red-700 cursor-not-allowed border border-red-200' : '',
-                day.isCoding && !day.booked ? 'bg-orange-50 text-orange-700 cursor-not-allowed border border-orange-200' : '',
+                day.isCoding && !day.booked ? 'bg-amber-100 text-amber-800 border-2 border-amber-400' : '',
                 day.isPast && !day.booked && !day.isCoding ? 'bg-neutral-50 text-neutral-400 cursor-not-allowed' : '',
                 day.date === selectedPickupDate || day.date === selectedReturnDate ? 'bg-[#0081A7] text-white font-bold ring-2 ring-[#0081A7] ring-offset-2 shadow-md' : '',
-                day.date && isDateInRange(day.date) && !day.booked && !day.isCoding ? 'bg-[#00AFB9]/20 text-[#0081A7] border border-[#00AFB9]/30' : '',
-                day.date && !day.disabled && day.date !== selectedPickupDate && day.date !== selectedReturnDate && !isDateInRange(day.date) ? 'hover:bg-[#0081A7]/10 hover:ring-2 hover:ring-[#0081A7]/20' : ''
+                day.date && isDateInRange(day.date) && !day.booked ? 'bg-[#00AFB9]/20 text-[#0081A7] border border-[#00AFB9]/30' : '',
+                day.date && !day.disabled && day.date !== selectedPickupDate && day.date !== selectedReturnDate && !isDateInRange(day.date) ? 'hover:bg-[#0081A7]/10 hover:ring-2 hover:ring-[#0081A7]/20 cursor-pointer' : ''
               ]"
             >
               <div v-if="day.booked" class="absolute inset-0 flex items-center justify-center">
                 <div class="w-0.5 h-full bg-red-500 rotate-45"></div>
               </div>
-              <div v-if="day.isCoding && !day.booked" class="absolute inset-0 flex items-center justify-center">
-                <div class="w-0.5 h-full bg-orange-500 rotate-45"></div>
+              <div v-if="day.isCoding && !day.booked" class="absolute top-1 right-1">
+                <div class="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
               </div>
               <span :class="(day.booked || day.isCoding) ? 'relative z-10' : ''">{{ day.day }}</span>
             </button>
@@ -287,9 +287,9 @@ const formatDate = (dateStr: string): string => {
               <span class="text-neutral-700">Booked</span>
             </div>
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 bg-orange-50 border border-orange-200 rounded relative">
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <div class="w-0.5 h-full bg-orange-500 rotate-45"></div>
+              <div class="w-6 h-6 bg-amber-100 border-2 border-amber-400 rounded relative">
+                <div class="absolute top-0.5 right-0.5">
+                  <div class="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
                 </div>
               </div>
               <span class="text-neutral-700">Coding Day</span>

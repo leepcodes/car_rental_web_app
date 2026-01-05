@@ -97,7 +97,7 @@ class ListingController extends Controller
 
         // Get all bookings for this vehicle
         $bookedDates = Booking::where('vehicle_id', $vehicle->id)
-            ->whereIn('status', ['pending', 'confirmed', 'ongoing', 'completed'])
+            ->whereIn('status', ['confirmed', 'ongoing'])
             ->orderBy('start_date', 'desc')
             ->get()
             ->map(function($booking) {

@@ -405,7 +405,7 @@ const testCredentials = {
                         type="text"
                         placeholder="1234 5678 9012 3456"
                         maxlength="19"
-                        class="w-full px-4 py-3 pl-12 text-nuetral-800 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none"
+                        class="w-full px-4 py-3 pl-12 text-neutral-900 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none"
                         @input="e => cardNumber = (e.target as HTMLInputElement).value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim()"
                       />
                       <CreditCard class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -420,7 +420,7 @@ const testCredentials = {
                       v-model="cardName"
                       type="text"
                       placeholder="JUAN DELA CRUZ"
-                      class="w-full px-4 py-3 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none uppercase"
+                      class="w-full px-4 py-3 text-neutral-900 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none uppercase"
                     />
                     <p v-if="user?.name" class="text-xs text-neutral-500 mt-1">Pre-filled with your account name</p>
                   </div>
