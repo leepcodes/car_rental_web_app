@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import AppHeader from '@/pages/clientSide/components/AppHeader.vue';
 import { 
   CheckCircle2,
   Calendar,
-  Clock,
-  MapPin,
   Car,
-  Download,
   Mail,
   Phone,
   CreditCard,
@@ -16,6 +13,10 @@ import {
   Share2,
   FileText,
   AlertCircle,
+  Printer,
+  X,
+  CheckCircle,
+  MapPin,
 } from 'lucide-vue-next';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +40,7 @@ const props = withDefaults(
         model: string;
         year: number;
         body_type: string;
-        plate_number?: string;
+        license_plate?: string;
         color?: string;
       };
       payment: {
@@ -69,15 +70,47 @@ const props = withDefaults(
   }
 );
 
-// Animation state
+// Animation and loading states
 const showConfetti = ref(true);
+const isEmailSending = ref(false);
+const showNotification = ref(false);
+const notificationType = ref<'success' | 'error'>('success');
+const notificationMessage = ref('');
+
+const page = usePage();
 
 onMounted(() => {
   // Hide confetti after 5 seconds
   setTimeout(() => {
     showConfetti.value = false;
   }, 5000);
+
+  // Check for flash messages
+  const flash = page.props.flash as any;
+  
+  if (flash?.success) {
+    showToast('success', flash.success);
+  }
+  
+  if (flash?.error) {
+    showToast('error', flash.error);
+  }
 });
+
+const showToast = (type: 'success' | 'error', message: string) => {
+  notificationType.value = type;
+  notificationMessage.value = message;
+  showNotification.value = true;
+
+  // Auto hide after 5 seconds
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 5000);
+};
+
+const closeNotification = () => {
+  showNotification.value = false;
+};
 
 const vehicleName = computed(() => {
   if (!props.booking?.vehicle) return 'Vehicle';
@@ -115,16 +148,6 @@ const rentalDuration = computed(() => {
   return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
 });
 
-const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    pending: 'bg-yellow-500',
-    confirmed: 'bg-green-500',
-    completed: 'bg-blue-500',
-    cancelled: 'bg-red-500',
-  };
-  return colors[status] || 'bg-gray-500';
-};
-
 const getPaymentStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -139,7 +162,24 @@ const handleDownloadReceipt = () => {
 };
 
 const handleEmailReceipt = () => {
-  alert('Receipt will be sent to your email: ' + (props.booking?.client.email || 'your email'));
+  if (!props.booking?.id) return;
+  
+  isEmailSending.value = true;
+  
+  router.post(`/receipt/${props.booking.id}/send`, {}, {
+    preserveScroll: true,
+    onSuccess: (page) => {
+      isEmailSending.value = false;
+      // Flash message will be picked up by onMounted watcher
+    },
+    onError: (errors) => {
+      isEmailSending.value = false;
+      // Flash message will be picked up by onMounted watcher
+    },
+    onFinish: () => {
+      isEmailSending.value = false;
+    }
+  });
 };
 
 const handleShareBooking = async () => {
@@ -153,9 +193,8 @@ const handleShareBooking = async () => {
     if (navigator.share) {
       await navigator.share(shareData);
     } else {
-      // Fallback: copy to clipboard
       await navigator.clipboard.writeText(window.location.href);
-      alert('Booking link copied to clipboard!');
+      showToast('success', 'Booking link copied to clipboard!');
     }
   } catch (err) {
     console.error('Error sharing:', err);
@@ -176,6 +215,55 @@ const goBackToHome = () => {
   <AppHeader :can-register="canRegister" />
   
   <div class="min-h-screen py-12 bg-neutral-100 relative overflow-hidden">
+    <!-- Toast Notification -->
+    <Transition
+      enter-active-class="transition ease-out duration-300 transform"
+      enter-from-class="translate-y-[-100%] opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition ease-in duration-200 transform"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-[-100%] opacity-0"
+    >
+      <div 
+        v-if="showNotification" 
+        class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] w-full max-w-md px-4"
+      >
+        <div 
+          :class="[
+            'rounded-lg shadow-2xl border-2 p-4 flex items-center gap-3',
+            notificationType === 'success' 
+              ? 'bg-green-50 border-green-500' 
+              : 'bg-red-50 border-red-500'
+          ]"
+        >
+          <CheckCircle 
+            v-if="notificationType === 'success'" 
+            class="w-6 h-6 text-green-600 flex-shrink-0" 
+          />
+          <AlertCircle 
+            v-else 
+            class="w-6 h-6 text-red-600 flex-shrink-0" 
+          />
+          
+          <p 
+            :class="[
+              'flex-1 font-medium text-sm',
+              notificationType === 'success' ? 'text-green-900' : 'text-red-900'
+            ]"
+          >
+            {{ notificationMessage }}
+          </p>
+          
+          <button 
+            @click="closeNotification"
+            class="text-neutral-500 hover:text-neutral-700 transition-colors flex-shrink-0"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Confetti Animation -->
     <div v-if="showConfetti" class="fixed inset-0 pointer-events-none z-50">
       <div class="confetti">🎉</div>
@@ -241,8 +329,8 @@ const goBackToHome = () => {
                     <Badge class="bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white border-0">
                       {{ booking?.vehicle.body_type || 'Vehicle' }}
                     </Badge>
-                    <span v-if="booking?.vehicle.plate_number" class="text-sm text-neutral-600">
-                      Plate: {{ booking.vehicle.plate_number }}
+                    <span v-if="booking?.vehicle.license_plate" class="text-sm text-neutral-600">
+                      Plate: {{ booking.vehicle.license_plate }}
                     </span>
                   </div>
                 </div>
@@ -360,16 +448,17 @@ const goBackToHome = () => {
                 variant="outline"
                 class="w-full border-[#0081A7]/30 hover:bg-[#0081A7]/5 hover:border-[#0081A7]"
               >
-                <Download class="w-4 h-4 mr-2" />
-                Download Receipt
+                <Printer class="w-4 h-4 mr-2" />
+                Print Receipt
               </Button>
               <Button
                 @click="handleEmailReceipt"
+                :disabled="isEmailSending"
                 variant="outline"
-                class="w-full border-[#0081A7]/30 hover:bg-[#0081A7]/5 hover:border-[#0081A7]"
+                class="w-full border-[#0081A7]/30 hover:bg-[#0081A7]/5 hover:border-[#0081A7] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Mail class="w-4 h-4 mr-2" />
-                Email Receipt
+                {{ isEmailSending ? 'Sending...' : 'Email Receipt' }}
               </Button>
               <Button
                 @click="handleShareBooking"
@@ -442,22 +531,9 @@ const goBackToHome = () => {
 </template>
 
 <style scoped>
-/* Ensure Roboto font is used */
-* {
-  font-family: 'Roboto', sans-serif;
-}
-
-/* Confetti Animation */
-.confetti {
-  position: absolute;
-  top: -10%;
-  font-size: 2rem;
-  animation: confetti-fall 3s linear forwards;
-}
-
 @keyframes confetti-fall {
   0% {
-    transform: translateY(0) rotate(0deg);
+    transform: translateY(-100vh) rotate(0deg);
     opacity: 1;
   }
   100% {
@@ -466,15 +542,17 @@ const goBackToHome = () => {
   }
 }
 
-/* Fade in animation */
-.animate-fade-in {
-  animation: fadeIn 0.8s ease-out;
+.confetti {
+  position: absolute;
+  font-size: 2rem;
+  animation: confetti-fall 4s linear infinite;
+  left: 50%;
 }
 
-@keyframes fadeIn {
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(-20px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -482,9 +560,8 @@ const goBackToHome = () => {
   }
 }
 
-/* Slow bounce */
-.animate-bounce-slow {
-  animation: bounce-slow 2s infinite;
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
 }
 
 @keyframes bounce-slow {
@@ -496,17 +573,12 @@ const goBackToHome = () => {
   }
 }
 
-/* Print styles */
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+
 @media print {
   .no-print {
-    display: none !important;
-  }
-  
-  body {
-    background: white !important;
-  }
-  
-  .confetti {
     display: none !important;
   }
 }

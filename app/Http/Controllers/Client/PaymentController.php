@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Vehicle;
 use App\Models\Booking;
 use App\Services\PaymentService;
+use App\Services\ReceiptService;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Storage;
@@ -231,6 +232,35 @@ class PaymentController extends Controller
 
             return to_route('client.booking')
                 ->withErrors(['error' => 'Failed to load confirmation page.']);
+        }
+    }
+    /**
+     * Send receipt email to client
+     */
+    public function sendReceipt($bookingId)
+    {
+        try {
+            $booking = Booking::with(['vehicle', 'payment', 'operator', 'client'])
+                ->where('id', $bookingId)
+                ->where('client_id', auth()->id())
+                ->firstOrFail();
+
+            // Send receipt email and get result
+            $result = ReceiptService::sendReceiptEmail($booking);
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->with('error', $result['message']);
+
+        } catch (\Exception $e) {
+            Log::error('Receipt send failed', [
+                'booking_id' => $bookingId,
+                'error' => $e->getMessage()
+            ]);
+
+            return back()->with('error', 'Failed to send receipt. Please try again.');
         }
     }
 }

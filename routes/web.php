@@ -61,6 +61,7 @@ Route::middleware(['auth', 'role:client'])->group(function () {
             Route::get('/payment/gateway/{booking}', [PaymentController::class, 'showPaymentGateway'])->name('payment.gateway');
             Route::post('/payment/complete/{booking}', [PaymentController::class, 'completePayment'])->name('payment.complete');
             Route::get('/payment/confirmation/{booking}', [PaymentController::class, 'showConfirmation'])->name('payment.confirmation');
+            Route::post('/receipt/{booking}/send', [PaymentController::class, 'sendReceipt'])->name('receipt.send');
         });
     });
 }); 
