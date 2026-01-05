@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { Calendar, CheckCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 
@@ -21,6 +21,11 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   codingDays: () => []
 });
+
+const emit = defineEmits(['booking-attempt']);
+
+const page = usePage();
+const user = computed(() => page.props.auth?.user);
 
 const selectedPickupDate = ref('');
 const selectedReturnDate = ref('');
@@ -166,6 +171,12 @@ const grandTotal = computed(() => totalPrice.value + serviceFee.value);
 const canBook = computed(() => selectedPickupDate.value && selectedReturnDate.value);
 
 const handleBooking = () => {
+  // Check if user is logged in first
+  if (!user.value) {
+    emit('booking-attempt');
+    return;
+  }
+
   if (!selectedPickupDate.value || !selectedReturnDate.value) {
     alert('Please select pickup and return dates');
     return;
@@ -185,34 +196,34 @@ const formatDate = (dateStr: string): string => {
 
 <template>
   <div class="sticky top-24">
-    <Card class="border-2 border-neutral-600 shadow-xl bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 overflow-hidden">
-      <CardHeader class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 text-white">
+    <Card class="border-2 border-[#0081A7] shadow-xl bg-white overflow-hidden">
+      <CardHeader class="bg-white border-b border-neutral-200">
         <div class="flex items-baseline gap-2">
-          <span class="text-4xl font-bold font-['Roboto']">₱{{ price.toLocaleString() }}</span>
-          <span class="text-lg">/day</span>
+          <span class="text-4xl font-bold font-['Roboto'] text-[#0081A7]">₱{{ price.toLocaleString() }}</span>
+          <span class="text-lg text-neutral-600">/day</span>
         </div>
-        <CardDescription class="text-white/90">
+        <CardDescription class="text-neutral-600">
           Best price guarantee
         </CardDescription>
       </CardHeader>
       
       <CardContent class="pt-6 space-y-6">
         <!-- Interactive Calendar -->
-        <div class="border rounded-lg p-4 bg-white">
+        <div class="border-2 border-[#0081A7]/20 rounded-lg p-4 bg-white">
           <!-- Calendar Header -->
           <div class="flex items-center justify-between mb-4">
             <button 
               @click="previousMonth"
-              class="p-2 text-blue-500 hover:text-blue-300 rounded-lg transition-colors"
+              class="p-2 text-[#0081A7] hover:bg-[#0081A7]/10 rounded-lg transition-colors"
             >
               <ChevronLeft class="w-5 h-5" />
             </button>
-            <h3 class="font-semibold text-cyan-500 text-lg">
+            <h3 class="font-semibold text-[#0081A7] text-lg">
               {{ monthNames[currentMonth.getMonth()] }} {{ currentMonth.getFullYear() }}
             </h3>
             <button 
               @click="nextMonth"
-              class="p-2 text-blue-500 hover:text-blue-300 rounded-lg transition-colors"
+              class="p-2 text-[#0081A7] hover:bg-[#0081A7]/10 rounded-lg transition-colors"
             >
               <ChevronRight class="w-5 h-5" />
             </button>
@@ -223,7 +234,7 @@ const formatDate = (dateStr: string): string => {
             <div 
               v-for="day in dayNames" 
               :key="day" 
-              class="text-center text-xs font-medium text-neutral-500 py-1"
+              class="text-center text-xs font-medium text-neutral-600 py-1"
             >
               {{ day }}
             </div>
@@ -237,14 +248,14 @@ const formatDate = (dateStr: string): string => {
               @click="day.date && handleDateClick(day.date, day.disabled)"
               :disabled="!day.day || day.disabled"
               :class="[
-                'aspect-square p-1 text-neutral-700 text-sm rounded-lg transition-all font-medium relative',
+                'aspect-square p-1 text-neutral-900 text-sm rounded-lg transition-all font-medium relative',
                 !day.day ? 'invisible' : '',
-                day.booked ? 'bg-red-100 text-red-700 cursor-not-allowed' : '',
-                day.isCoding && !day.booked ? 'bg-orange-100 text-orange-700 cursor-not-allowed' : '',
-                day.isPast && !day.booked && !day.isCoding ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed' : '',
-                day.date === selectedPickupDate || day.date === selectedReturnDate ? 'bg-[#0081A7] text-white font-bold ring-2 ring-[#0081A7] ring-offset-2' : '',
-                day.date && isDateInRange(day.date) && !day.booked && !day.isCoding ? 'bg-[#00AFB9]/20 text-[#0081A7]' : '',
-                day.date && !day.disabled && day.date !== selectedPickupDate && day.date !== selectedReturnDate && !isDateInRange(day.date) ? 'hover:bg-neutral-300 hover:ring-2 hover:ring-neutral-300' : ''
+                day.booked ? 'bg-red-50 text-red-700 cursor-not-allowed border border-red-200' : '',
+                day.isCoding && !day.booked ? 'bg-orange-50 text-orange-700 cursor-not-allowed border border-orange-200' : '',
+                day.isPast && !day.booked && !day.isCoding ? 'bg-neutral-50 text-neutral-400 cursor-not-allowed' : '',
+                day.date === selectedPickupDate || day.date === selectedReturnDate ? 'bg-[#0081A7] text-white font-bold ring-2 ring-[#0081A7] ring-offset-2 shadow-md' : '',
+                day.date && isDateInRange(day.date) && !day.booked && !day.isCoding ? 'bg-[#00AFB9]/20 text-[#0081A7] border border-[#00AFB9]/30' : '',
+                day.date && !day.disabled && day.date !== selectedPickupDate && day.date !== selectedReturnDate && !isDateInRange(day.date) ? 'hover:bg-[#0081A7]/10 hover:ring-2 hover:ring-[#0081A7]/20' : ''
               ]"
             >
               <div v-if="day.booked" class="absolute inset-0 flex items-center justify-center">
@@ -258,34 +269,34 @@ const formatDate = (dateStr: string): string => {
           </div>
 
           <!-- Legend -->
-          <div class="mt-4 pt-4 border-t grid grid-cols-2 gap-3 text-xs">
+          <div class="mt-4 pt-4 border-t-2 border-[#0081A7]/20 grid grid-cols-2 gap-3 text-xs">
             <div class="flex items-center gap-2">
               <div class="w-6 h-6 bg-[#0081A7] rounded ring-2 ring-[#0081A7] ring-offset-1"></div>
-              <span class="text-[#0081A7]">Selected</span>
+              <span class="text-neutral-700">Selected</span>
             </div>
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 bg-[#00AFB9]/20 rounded"></div>
-              <span class="text-[#00AFB9]">In Range</span>
+              <div class="w-6 h-6 bg-[#00AFB9]/20 rounded border border-[#00AFB9]/30"></div>
+              <span class="text-neutral-700">In Range</span>
             </div>
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 bg-red-100 rounded relative">
+              <div class="w-6 h-6 bg-red-50 border border-red-200 rounded relative">
                 <div class="absolute inset-0 flex items-center justify-center">
                   <div class="w-0.5 h-full bg-red-500 rotate-45"></div>
                 </div>
               </div>
-              <span class="text-red-500">Booked</span>
+              <span class="text-neutral-700">Booked</span>
             </div>
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 bg-orange-100 rounded relative">
+              <div class="w-6 h-6 bg-orange-50 border border-orange-200 rounded relative">
                 <div class="absolute inset-0 flex items-center justify-center">
                   <div class="w-0.5 h-full bg-orange-500 rotate-45"></div>
                 </div>
               </div>
-              <span class="text-orange-800">Coding Day</span>
+              <span class="text-neutral-700">Coding Day</span>
             </div>
             <div class="flex items-center gap-2">
-              <div class="w-6 h-6 bg-neutral-300 rounded"></div>
-              <span class="text-neutral-800">Past</span>
+              <div class="w-6 h-6 bg-neutral-50 rounded"></div>
+              <span class="text-neutral-700">Past</span>
             </div>
           </div>    
         </div>
@@ -293,17 +304,17 @@ const formatDate = (dateStr: string): string => {
         <!-- Selected Dates Display -->
         <div 
           v-if="selectedPickupDate || selectedReturnDate" 
-          class="p-4 bg-[#0081A7]/5 rounded-lg border border-[#0081A7]/20"
+          class="p-4 bg-[#0081A7]/5 rounded-lg border-2 border-[#0081A7]/20"
         >
           <div class="space-y-2 text-sm">
             <div class="flex items-center justify-between">
-              <span class="text-neutral-100">Pickup:</span>
+              <span class="text-neutral-600">Pickup:</span>
               <span class="font-semibold text-[#0081A7]">
                 {{ selectedPickupDate ? formatDate(selectedPickupDate) : 'Not selected' }}
               </span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-neutral-100">Return:</span>
+              <span class="text-neutral-600">Return:</span>
               <span class="font-semibold text-[#0081A7]">
                 {{ selectedReturnDate ? formatDate(selectedReturnDate) : 'Not selected' }}
               </span>
@@ -312,8 +323,8 @@ const formatDate = (dateStr: string): string => {
         </div>
 
         <!-- Active Bookings -->
-        <div v-if="activeBookings.length > 0" class="pt-4 border-t">
-          <h4 class="text-sm font-semibold text-neutral-700 mb-3 flex items-center gap-2">
+        <div v-if="activeBookings.length > 0" class="pt-4 border-t-2 border-[#0081A7]/20">
+          <h4 class="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-2">
             <AlertCircle class="w-4 h-4 text-red-500" />
             Unavailable Dates
           </h4>
@@ -321,7 +332,7 @@ const formatDate = (dateStr: string): string => {
             <div 
               v-for="booking in activeBookings" 
               :key="booking.id" 
-              class="p-2 bg-red-50 border border-red-200 rounded text-xs"
+              class="p-2 bg-red-50 border-2 border-red-200 rounded text-xs"
             >
               <div class="flex items-center justify-between gap-2">
                 <span class="font-medium text-red-800 truncate">
@@ -336,38 +347,38 @@ const formatDate = (dateStr: string): string => {
         </div>
 
         <!-- Price Breakdown -->
-        <div v-if="totalDays > 0" class="pt-4 border-t border-white/20 space-y-2">
+        <div v-if="totalDays > 0" class="pt-4 border-t-2 border-[#0081A7]/20 space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-white/80">₱{{ price.toLocaleString() }} × {{ totalDays }} day{{ totalDays > 1 ? 's' : '' }}</span>
-            <span class="font-semibold text-white">₱{{ totalPrice.toLocaleString() }}</span>
+            <span class="text-neutral-600">₱{{ price.toLocaleString() }} × {{ totalDays }} day{{ totalDays > 1 ? 's' : '' }}</span>
+            <span class="font-semibold text-neutral-900">₱{{ totalPrice.toLocaleString() }}</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-white/80">Service fee</span>
-            <span class="font-semibold text-white">₱{{ serviceFee.toLocaleString() }}</span>
+            <span class="text-neutral-600">Service fee (5%)</span>
+            <span class="font-semibold text-neutral-900">₱{{ serviceFee.toLocaleString() }}</span>
           </div>
-          <div class="flex justify-between pt-2 border-t border-white/20 font-bold text-lg">
-            <span class="text-white">Total</span>
-            <span class="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">₱{{ grandTotal.toLocaleString() }}</span>
+          <div class="flex justify-between pt-2 border-t-2 border-[#0081A7]/20 font-bold text-lg">
+            <span class="text-neutral-900">Total</span>
+            <span class="text-[#0081A7]">₱{{ grandTotal.toLocaleString() }}</span>
           </div>
         </div>
       </CardContent>
       
-      <CardFooter class="flex flex-col gap-2 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
+      <CardFooter class="flex flex-col gap-2 bg-white border-t border-neutral-200">
         <button
           @click="handleBooking"
           :disabled="!canBook"
-          class="w-full py-3 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto']"
+          class="w-full py-3 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-semibold hover:shadow-lg hover:from-[#0081A7]/90 hover:to-[#00AFB9]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto']"
         >
           {{ canBook ? 'Book Now' : 'Select Dates on Calendar' }}
         </button>
-        <p class="text-xs text-center text-white/70">
+        <p class="text-xs text-center text-neutral-600">
           You won't be charged yet
         </p>
       </CardFooter>
     </Card>
 
     <!-- Quick Info Card -->
-    <Card class="mt-4 bg-neutral-50">
+    <Card class="mt-4 bg-blue-50 border-2 border-blue-200">
       <CardContent class="pt-6">
         <div class="space-y-3 text-sm">
           <div class="flex items-center gap-2 text-neutral-700">
@@ -391,29 +402,27 @@ const formatDate = (dateStr: string): string => {
 <style>
 * {
   font-family: 'Roboto', sans-serif;
-}
+} 
 
-/* Style date and time input calendar icons to white */
+/* Style date and time input calendar icons */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(100%) brightness(100%);
+  filter: invert(50%) sepia(100%) saturate(500%) hue-rotate(160deg);
   cursor: pointer;
   opacity: 1 !important;
   inline-size: 20px;
-}
+} 
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="time"]::-webkit-calendar-picker-indicator:hover {
-  filter: invert(100%) brightness(120%);
+  filter: invert(50%) sepia(100%) saturate(600%) hue-rotate(160deg);
 }
-
-/* For Firefox */
+ 
 input[type="date"],
 input[type="time"] {
-  color-scheme: dark;
+  color-scheme: light;
 }
-
-/* Ensure icons are visible on webkit browsers */
+ 
 input[type="date"]::-webkit-inner-spin-button,
 input[type="date"]::-webkit-clear-button {
   display: none;
@@ -423,4 +432,4 @@ input[type="time"]::-webkit-inner-spin-button,
 input[type="time"]::-webkit-clear-button {
   display: none;
 }
-</style>
+</style> 

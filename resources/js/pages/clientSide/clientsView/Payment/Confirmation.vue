@@ -14,13 +14,12 @@ import {
   CreditCard,
   ArrowRight,
   Share2,
-  Printer,
   FileText,
   AlertCircle,
 } from 'lucide-vue-next';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button/index';
 
 const props = withDefaults(
   defineProps<{
@@ -168,7 +167,7 @@ const goToMyBookings = () => {
 };
 
 const goBackToHome = () => {
-  router.visit('/client/home');
+  router.visit('/client/booking');
 };
 </script>
 
@@ -176,7 +175,7 @@ const goBackToHome = () => {
   <Head title="Booking Confirmation" />
   <AppHeader :can-register="canRegister" />
   
-  <div class="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-neutral-50 relative overflow-hidden">
+  <div class="min-h-screen py-12 bg-neutral-100 relative overflow-hidden">
     <!-- Confetti Animation -->
     <div v-if="showConfetti" class="fixed inset-0 pointer-events-none z-50">
       <div class="confetti">🎉</div>
@@ -224,22 +223,22 @@ const goBackToHome = () => {
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
           <!-- Vehicle Details -->
-          <Card class="shadow-lg">
-            <CardHeader class="bg-gradient-to-r from-[#0081A7]/10 to-[#00AFB9]/10">
-              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2">
-                <Car class="w-5 h-5 text-[#0081A7]" />
+          <Card class="shadow-lg border-2 border-[#0081A7]/20 bg-white">
+            <CardHeader class="bg-white border-b-2 border-[#0081A7]/20">
+              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2 text-[#0081A7]">
+                <Car class="w-5 h-5" />
                 Vehicle Information
               </CardTitle>
             </CardHeader>
             <CardContent class="pt-6">
               <div class="flex items-center gap-4 mb-6">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#0081A7] to-[#00AFB9] flex items-center justify-center">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#0081A7] to-[#00AFB9] flex items-center justify-center shadow-md">
                   <Car class="w-8 h-8 text-white" />
                 </div>
                 <div class="flex-1">
                   <h3 class="text-xl font-bold text-neutral-900">{{ vehicleName }}</h3>
                   <div class="flex items-center gap-2 mt-1">
-                    <Badge class="bg-[#0081A7] text-white border-0">
+                    <Badge class="bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white border-0">
                       {{ booking?.vehicle.body_type || 'Vehicle' }}
                     </Badge>
                     <span v-if="booking?.vehicle.plate_number" class="text-sm text-neutral-600">
@@ -250,14 +249,14 @@ const goBackToHome = () => {
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="p-4 bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg">
+                <div class="p-4 bg-[#0081A7]/5 rounded-lg border border-[#0081A7]/20">
                   <div class="flex items-center gap-2 text-[#0081A7] mb-2">
                     <Calendar class="w-4 h-4" />
                     <span class="text-sm font-semibold">Pickup Date</span>
                   </div>
                   <p class="font-bold text-neutral-900">{{ formatDate(booking?.start_date || '') }}</p>
                 </div>
-                <div class="p-4 bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg">
+                <div class="p-4 bg-[#0081A7]/5 rounded-lg border border-[#0081A7]/20">
                   <div class="flex items-center gap-2 text-[#0081A7] mb-2">
                     <Calendar class="w-4 h-4" />
                     <span class="text-sm font-semibold">Return Date</span>
@@ -276,28 +275,28 @@ const goBackToHome = () => {
           </Card>
 
           <!-- Operator Information -->
-          <Card class="shadow-lg">
-            <CardHeader>
-              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2">
-                <MapPin class="w-5 h-5 text-[#0081A7]" />
+          <Card class="shadow-lg border-2 border-[#0081A7]/20 bg-white">
+            <CardHeader class="bg-white border-b-2 border-[#0081A7]/20">
+              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2 text-[#0081A7]">
+                <MapPin class="w-5 h-5" />
                 Operator Information
               </CardTitle>
-              <CardDescription>Contact details for pickup and support</CardDescription>
+              <CardDescription class="text-neutral-600">Contact details for pickup and support</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent class="pt-6">
               <div class="space-y-4">
                 <div>
                   <p class="text-sm text-neutral-600 mb-1">Operator Name</p>
                   <p class="font-semibold text-neutral-900">{{ booking?.operator.name || 'N/A' }}</p>
                 </div>
                 <div v-if="booking?.operator.email" class="flex items-center gap-2">
-                  <Mail class="w-4 h-4 text-neutral-500" />
+                  <Mail class="w-4 h-4 text-[#0081A7]" />
                   <a :href="`mailto:${booking.operator.email}`" class="text-[#0081A7] hover:underline">
                     {{ booking.operator.email }}
                   </a>
                 </div>
                 <div v-if="booking?.operator.phone" class="flex items-center gap-2">
-                  <Phone class="w-4 h-4 text-neutral-500" />
+                  <Phone class="w-4 h-4 text-[#0081A7]" />
                   <a :href="`tel:${booking.operator.phone}`" class="text-[#0081A7] hover:underline">
                     {{ booking.operator.phone }}
                   </a>
@@ -307,14 +306,14 @@ const goBackToHome = () => {
           </Card>
 
           <!-- Additional Notes -->
-          <Card v-if="booking?.notes" class="shadow-lg">
-            <CardHeader>
-              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2">
-                <FileText class="w-5 h-5 text-[#0081A7]" />
+          <Card v-if="booking?.notes" class="shadow-lg border-2 border-[#0081A7]/20 bg-white">
+            <CardHeader class="bg-white border-b-2 border-[#0081A7]/20">
+              <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2 text-[#0081A7]">
+                <FileText class="w-5 h-5" />
                 Additional Notes
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent class="pt-6">
               <p class="text-neutral-700 whitespace-pre-wrap">{{ booking.notes }}</p>
             </CardContent>
           </Card>
@@ -323,30 +322,30 @@ const goBackToHome = () => {
         <!-- Sidebar -->
         <div class="space-y-6">
           <!-- Payment Summary -->
-          <Card class="shadow-xl border-2 border-[#0081A7]/20 sticky top-24">
-            <CardHeader class="bg-gradient-to-br from-[#0081A7] to-[#00AFB9] text-white">
+          <Card class="shadow-xl border-2 border-[#0081A7] sticky top-24 bg-white">
+            <CardHeader class="bg-gradient-to-br from-[#0081A7] to-[#00AFB9] text-white border-b-2 border-white/20">
               <CardTitle class="text-xl font-['Roboto']">Payment Summary</CardTitle>
             </CardHeader>
             <CardContent class="pt-6 space-y-4">
               <div class="space-y-3">
                 <div class="flex justify-between text-sm">
                   <span class="text-neutral-600">Payment Method</span>
-                  <span class="font-semibold flex items-center gap-1">
-                    <CreditCard class="w-4 h-4" />
+                  <span class="font-semibold flex items-center gap-1 text-neutral-900">
+                    <CreditCard class="w-4 h-4 text-[#0081A7]" />
                     {{ booking?.payment.payment_method || 'Card' }}
                   </span>
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-neutral-600">Transaction ID</span>
-                  <span class="font-mono text-xs">{{ booking?.payment.id || 'N/A' }}</span>
+                  <span class="font-mono text-xs text-neutral-900">{{ booking?.payment.id || 'N/A' }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-neutral-600">Payment Date</span>
-                  <span class="text-xs">{{ formatDateTime(booking?.payment.created_at || '') }}</span>
+                  <span class="text-xs text-neutral-900">{{ formatDateTime(booking?.payment.created_at || '') }}</span>
                 </div>
               </div>
 
-              <div class="pt-4 border-t-2 border-dashed">
+              <div class="pt-4 border-t-2 border-[#0081A7]/20">
                 <div class="flex justify-between items-center">
                   <span class="text-lg font-bold text-neutral-900">Total Paid</span>
                   <span class="text-2xl font-bold text-[#0081A7]">
@@ -355,11 +354,11 @@ const goBackToHome = () => {
                 </div>
               </div>
             </CardContent>
-            <CardFooter class="flex flex-col gap-3 bg-neutral-50">
+            <CardFooter class="flex flex-col gap-3 bg-white border-t-2 border-[#0081A7]/20">
               <Button
                 @click="handleDownloadReceipt"
                 variant="outline"
-                class="w-full"
+                class="w-full border-[#0081A7]/30 hover:bg-[#0081A7]/5 hover:border-[#0081A7]"
               >
                 <Download class="w-4 h-4 mr-2" />
                 Download Receipt
@@ -367,7 +366,7 @@ const goBackToHome = () => {
               <Button
                 @click="handleEmailReceipt"
                 variant="outline"
-                class="w-full"
+                class="w-full border-[#0081A7]/30 hover:bg-[#0081A7]/5 hover:border-[#0081A7]"
               >
                 <Mail class="w-4 h-4 mr-2" />
                 Email Receipt
@@ -375,7 +374,7 @@ const goBackToHome = () => {
               <Button
                 @click="handleShareBooking"
                 variant="outline"
-                class="w-full"
+                class="w-full border-[#0081A7]/30 hover:bg-[#0081A7]/5 hover:border-[#0081A7]"
               >
                 <Share2 class="w-4 h-4 mr-2" />
                 Share Booking
@@ -384,14 +383,14 @@ const goBackToHome = () => {
           </Card>
 
           <!-- Important Reminders -->
-          <Card class="bg-amber-50 border-amber-200">
-            <CardHeader>
+          <Card class="bg-amber-50 border-2 border-amber-200">
+            <CardHeader class="border-b-2 border-amber-200 bg-amber-50">
               <CardTitle class="text-lg flex items-center gap-2 text-amber-900">
                 <AlertCircle class="w-5 h-5" />
                 Important Reminders
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent class="pt-6">
               <ul class="space-y-2 text-sm text-amber-800">
                 <li class="flex items-start gap-2">
                   <span class="text-amber-600 mt-0.5">•</span>
@@ -423,7 +422,7 @@ const goBackToHome = () => {
       <div class="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
         <Button
           @click="goToMyBookings"
-          class="bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white px-8 py-6 text-lg"
+          class="bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white hover:from-[#0081A7]/90 hover:to-[#00AFB9]/90 px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
           size="lg"
         >
           View My Bookings
@@ -433,7 +432,7 @@ const goBackToHome = () => {
           @click="goBackToHome"
           variant="outline"
           size="lg"
-          class="px-8 py-6 text-lg"
+          class="px-8 py-6 text-lg border-2 border-[#0081A7]/30 hover:bg-[#0081A7]/5 hover:border-[#0081A7]"
         >
           Browse More Vehicles
         </Button>

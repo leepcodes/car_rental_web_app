@@ -13,12 +13,11 @@ import {
   CreditCard as CardIcon,
   Shield,
   Calendar,
-  MapPin
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button/index';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { route } from 'ziggy-js';
+
 
 interface BookingData {
   id: number;
@@ -314,7 +313,7 @@ const testCredentials = {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Left Column: Payment Form -->
         <div class="lg:col-span-2 space-y-6">
-          <Card class="border-2 border-[#0081A7]/20">
+          <Card class="border-2 border-[#0081A7] bg-white">
             <!-- Processing State -->
             <div v-if="paymentStatus === 'processing'" class="p-12 text-center">
               <div class="inline-block animate-spin rounded-full h-20 w-20 border-4 border-[#0081A7] border-t-transparent mb-6"></div>
@@ -349,8 +348,8 @@ const testCredentials = {
 
             <!-- Payment Form -->
             <div v-else>
-              <CardHeader class="bg-gradient-to-r from-[#0081A7]/10 to-[#00AFB9]/10">
-                <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2">
+              <CardHeader class="bg-white border-b border-neutral-200">
+                <CardTitle class="text-xl font-['Roboto'] flex items-center gap-2 text-[#0081A7]">
                   <CreditCard class="w-5 h-5 text-[#0081A7]" />
                   Payment Information
                 </CardTitle>
@@ -359,10 +358,10 @@ const testCredentials = {
               <CardContent class="pt-6 space-y-6">
                 <!-- Payment Method Display (Read-only) -->
                 <div>
-                  <label class="block text-sm font-medium text-neutral-700 mb-3">
+                  <label class="block text-sm font-medium text-[#0081A7] mb-3">
                     Payment Method
                   </label>
-                  <div class="p-4 bg-gradient-to-br from-[#0081A7]/10 to-[#00AFB9]/10 rounded-lg border-2 border-[#0081A7]">
+                  <div class="p-4 bg-[#0081A7]/5 rounded-lg border-2 border-[#0081A7]">
                     <div class="flex items-center gap-3">
                       <component 
                         :is="selectedMethod === 'credit_card' ? CardIcon : Wallet"
@@ -374,7 +373,7 @@ const testCredentials = {
                         </p>
                         <p class="text-sm text-neutral-600">Selected from previous page</p>
                       </div>
-                      <Badge class="bg-[#00AFB9] text-white border-0">Active</Badge>
+                      <Badge class="bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white border-0">Active</Badge>
                     </div>
                   </div>
                 </div>
@@ -397,7 +396,7 @@ const testCredentials = {
                 <!-- Credit/Debit Card Form -->
                 <div v-if="selectedMethod === 'credit_card'" class="space-y-4">
                   <div>
-                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                    <label class="block text-sm font-medium text-[#0081A7] mb-2">
                       Card Number
                     </label>
                     <div class="relative">
@@ -406,7 +405,7 @@ const testCredentials = {
                         type="text"
                         placeholder="1234 5678 9012 3456"
                         maxlength="19"
-                        class="w-full px-4 py-3 pl-12 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none"
+                        class="w-full px-4 py-3 pl-12 text-nuetral-800 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none"
                         @input="e => cardNumber = (e.target as HTMLInputElement).value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim()"
                       />
                       <CreditCard class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
@@ -414,21 +413,21 @@ const testCredentials = {
                   </div>
 
                   <div>
-                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                    <label class="block text-sm font-medium text-[#0081A7] mb-2">
                       Cardholder Name
                     </label>
                     <input
                       v-model="cardName"
                       type="text"
                       placeholder="JUAN DELA CRUZ"
-                      class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none uppercase"
+                      class="w-full px-4 py-3 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none uppercase"
                     />
                     <p v-if="user?.name" class="text-xs text-neutral-500 mt-1">Pre-filled with your account name</p>
                   </div>
 
                   <div class="grid grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-sm font-medium text-neutral-700 mb-2">
+                      <label class="block text-sm  font-medium text-[#0081A7] mb-2">
                         Expiry Date
                       </label>
                       <input
@@ -436,7 +435,7 @@ const testCredentials = {
                         type="text"
                         placeholder="MM/YY"
                         maxlength="5"
-                        class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none"
+                        class="w-full px-4 py-3 text-neutral-800 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none"
                         @input="e => {
                           const val = (e.target as HTMLInputElement).value.replace(/\D/g, '');
                           expiryDate = val.length >= 2 ? val.slice(0,2) + '/' + val.slice(2,4) : val;
@@ -444,7 +443,7 @@ const testCredentials = {
                       />
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-neutral-700 mb-2">
+                      <label class="block text-sm font-medium text-[#0081A7] mb-2">
                         CVV
                       </label>
                       <input
@@ -452,7 +451,7 @@ const testCredentials = {
                         type="password"
                         placeholder="123"
                         maxlength="3"
-                        class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none"
+                        class="w-full px-4 py-3 text-neutral-800 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none"
                         @input="e => cvv = (e.target as HTMLInputElement).value.replace(/\D/g, '').slice(0,3)"
                       />
                     </div>
@@ -462,7 +461,7 @@ const testCredentials = {
                 <!-- E-Wallet Form -->
                 <div v-else class="space-y-4">
                   <div>
-                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                    <label class="block text-sm font-medium text-[#0081A7] mb-2">
                       Mobile Number
                     </label>
                     <div class="relative">
@@ -471,23 +470,23 @@ const testCredentials = {
                         type="text"
                         placeholder="09123456789"
                         maxlength="11"
-                        class="w-full px-4 py-3 pl-12 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none"
+                        class="w-full px-4 py-3 pl-12 text-neutral-800 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none"
                         @input="e => ewalletNumber = (e.target as HTMLInputElement).value.replace(/\D/g, '').slice(0,11)"
                       />
-                      <Wallet class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                      <Wallet class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-800" />
                     </div>
                     <p class="text-xs text-neutral-500 mt-1">11-digit Philippine mobile number</p>
                   </div>
 
                   <div>
-                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                    <label class="block text-sm font-medium text-[#0081A7] mb-2">
                       Email Address
                     </label>
                     <input
                       v-model="ewalletEmail"
                       type="email"
                       placeholder="juan@example.com"
-                      class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#00AFB9] focus:border-[#00AFB9] outline-none"
+                      class="w-full px-4 py-3 text-nuetral-800 border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none"
                     />
                     <p class="text-xs text-neutral-500 mt-1">Registered {{ selectedMethod === 'gcash' ? 'GCash' : 'PayMaya' }} email</p>
                   </div>
@@ -503,15 +502,14 @@ const testCredentials = {
                 <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t">
                   <Button
                     @click="handleCancel"
-                    variant="outline"
-                    class="flex-1 py-6 text-base"
+                    class="flex-1 py-6 text-base bg-neutral-500 text-white hover:bg-neutral-600 border-0"
                     :disabled="isProcessing"
                   >
                     Cancel Payment
                   </Button>
                   <Button
                     @click="processPayment"
-                    class="flex-1 py-6 text-base bg-gradient-to-r from-[#0081A7] to-[#00AFB9] hover:from-[#006b8f] hover:to-[#009aa3]"
+                    class="flex-1 py-6 text-base bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white hover:from-[#0081A7]/90 hover:to-[#00AFB9]/90 border-0"
                     :disabled="isProcessing"
                   >
                     Pay {{ formattedAmount }}
@@ -525,8 +523,8 @@ const testCredentials = {
         <!-- Right Column: Booking Summary -->
         <div class="lg:col-span-1">
           <div class="sticky top-24 space-y-4">
-            <Card class="border-2 border-[#0081A7]/20 shadow-xl">
-              <CardHeader class="bg-gradient-to-br from-[#0081A7] to-[#00AFB9] text-white">
+            <Card class="border-2 border-[#0081A7] shadow-xl bg-white">
+              <CardHeader class="bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white">
                 <CardTitle class="text-xl font-['Roboto']">Payment Summary</CardTitle>
               </CardHeader>
               <CardContent class="pt-6 space-y-4">

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AppHeader from '@/pages/clientSide/components/AppHeader.vue';
 import BookingCard from '@/pages/clientSide/components/BookingCard.vue';
 import { 
@@ -86,7 +86,7 @@ interface Vehicle {
   rules: string[];
   insurance: Insurance;
   documents?: Document[];
-}
+} 
 
 interface Props {
   canRegister?: boolean;
@@ -96,6 +96,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), { 
   canRegister: true
 });
+
+const page = usePage();
+const user = computed(() => page.props.auth?.user);
 
 const currentImageIndex = ref(0);
 const isFavorite = ref(false);
@@ -137,6 +140,13 @@ const getCodingDayName = computed(() => {
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   return props.vehicle.codingDays.map(day => dayNames[day]).join(', ');
 });
+
+// Check if user needs to login
+const handleBookingAttempt = () => {
+  if (!user.value) {
+    router.visit(`/login?redirect=/client/booking/${props.vehicle.id}`);
+  }
+};
 </script>
 
 <template>
@@ -149,7 +159,7 @@ const getCodingDayName = computed(() => {
       <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-4">
         <button
           @click="goBack"
-          class="flex items-center gap-2 text-neutral-600 hover:text-[blue-600] transition-colors group"
+          class="flex items-center gap-2 text-neutral-600 hover:text-[#0081A7] transition-colors group"
         >
           <ArrowLeft class="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           <span class="font-medium">Back to Listings</span>
@@ -158,14 +168,41 @@ const getCodingDayName = computed(() => {
     </div>
 
     <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+      <!-- Guest Notice - Only show if not logged in -->
+      <div v-if="!user" class="mb-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+        <div class="flex items-start gap-3">
+          <AlertCircle class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div class="flex-1">
+            <p class="text-sm text-blue-800">
+              <span class="font-semibold">Sign in to book this vehicle.</span> 
+              Create an account or log in to make a reservation.
+            </p>
+            <div class="flex gap-2 mt-3">
+              <Link 
+                href="/login" 
+                class="px-4 py-2 bg-[#0081A7] text-white rounded-lg text-sm font-medium hover:bg-[#0081A7]/90 transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link 
+                href="/register" 
+                class="px-4 py-2 bg-white text-[#0081A7] border-2 border-[#0081A7] rounded-lg text-sm font-medium hover:bg-[#0081A7]/5 transition-colors"
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Left Column: Vehicle Details -->
         <div class="lg:col-span-2 space-y-6">
           <!-- Image Gallery -->
-          <Card class="overflow-hidden bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
+          <Card class="overflow-hidden border-2 border-[#0081A7] bg-white">
             <div class="relative">
               <!-- Main Image -->
-              <div class="aspect-video overflow-hidden bg-gradient-to-br from-neutral-700 via-neutral-800 to-neutral-900">
+              <div class="aspect-video overflow-hidden bg-gradient-to-br from-neutral-100 to-neutral-200">
                 <img
                   v-if="vehicle.images && vehicle.images.length > 0"
                   :src="vehicle.images[currentImageIndex]"
@@ -179,13 +216,13 @@ const getCodingDayName = computed(() => {
 
               <!-- Badges Overlay -->
               <div class="absolute top-4 left-4 flex gap-2">
-                <Badge class="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white border-0">
+                <Badge class="bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white border-0 shadow-lg">
                   {{ vehicle.type }}
                 </Badge>
-                <Badge v-if="vehicle.featured" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white border-0">
+                <Badge v-if="vehicle.featured" class="bg-gradient-to-r from-amber-400 to-amber-500 text-white border-0 shadow-lg">
                   Featured
                 </Badge>
-                <Badge v-if="getCodingDayName" class="bg-orange-500 hover:bg-orange-600 text-white border-0">
+                <Badge v-if="getCodingDayName" class="bg-orange-500 text-white border-0 shadow-lg">
                   Coding: {{ getCodingDayName }}
                 </Badge>
               </div>
@@ -194,13 +231,13 @@ const getCodingDayName = computed(() => {
               <div class="absolute top-4 right-4 flex gap-2">
                 <button
                   @click="shareVehicle"
-                  class="p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-colors"
+                  class="p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110"
                 >
                   <Share2 class="w-5 h-5 text-neutral-700" />
                 </button>
                 <button
                   @click="toggleFavorite"
-                  class="p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-colors"
+                  class="p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110"
                 >
                   <Heart 
                     :class="[
@@ -220,7 +257,7 @@ const getCodingDayName = computed(() => {
                   :class="[
                     'w-16 h-12 rounded overflow-hidden border-2 transition-all',
                     currentImageIndex === index 
-                      ? 'border-blue-400 scale-105' 
+                      ? 'border-[#0081A7] scale-105 shadow-lg' 
                       : 'border-white/50 hover:border-white opacity-70 hover:opacity-100'
                   ]"
                 >
@@ -243,16 +280,16 @@ const getCodingDayName = computed(() => {
                 </h1>
                 <div class="flex items-center gap-3 mt-2 text-neutral-600">
                   <div class="flex items-center gap-1">
-                    <MapPin class="w-4 h-4" />
+                    <MapPin class="w-4 h-4 text-[#0081A7]" />
                     <span>{{ vehicle.location }}</span>
                   </div>
                   <span class="text-neutral-300">•</span>
-                  <span class="text-[blue-600] font-medium">{{ vehicle.specifications.plateNumber }}</span>
+                  <span class="text-[#0081A7] font-medium">{{ vehicle.specifications.plateNumber }}</span>
                 </div>
               </div>
             </div>
 
-            <div class="flex items-center gap-4 py-3 border-y">
+            <div class="flex items-center gap-4 py-3 border-y-2 border-[#0081A7]/20">
               <div class="flex items-center gap-1">
                 <Star class="w-5 h-5 fill-amber-400 text-amber-400" />
                 <span class="font-bold text-lg">{{ vehicle.rating }}</span>
@@ -260,7 +297,7 @@ const getCodingDayName = computed(() => {
               <span class="text-neutral-400">•</span>
               <span class="text-neutral-600">{{ vehicle.reviews }} reviews</span>
               <span class="text-neutral-400">•</span>
-                <Badge variant="outline" class="border-blue-400 text-blue-600">
+              <Badge variant="outline" class="border-[#0081A7] text-[#0081A7]">
                 <CheckCircle class="w-3 h-3 mr-1" />
                 Verified Vehicle
               </Badge>
@@ -268,7 +305,7 @@ const getCodingDayName = computed(() => {
           </div>
 
           <!-- Coding Day Notice -->
-          <Card v-if="getCodingDayName" class="border-orange-200 bg-orange-50">
+          <Card v-if="getCodingDayName" class="border-2 border-orange-200 bg-orange-50">
             <CardContent class="pt-6">
               <div class="flex items-start gap-3">
                 <AlertCircle class="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
@@ -284,172 +321,172 @@ const getCodingDayName = computed(() => {
           </Card>
 
           <!-- Key Specifications -->
-          <Card class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
-            <CardHeader>
-              <CardTitle class="text-xl font-['Roboto'] text-white">Vehicle Specifications</CardTitle>
+          <Card class="border-2 border-[#0081A7] bg-white">
+            <CardHeader class="bg-white border-b border-neutral-200">
+              <CardTitle class="text-xl font-['Roboto'] text-[#0081A7]">Vehicle Specifications</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent class="pt-6">
               <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div class="flex flex-col items-center p-4 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 rounded-lg">
-                  <Users class="w-8 h-8 text-white mb-2" />
-                  <span class="text-2xl font-bold text-white">{{ vehicle.passengers }}</span>
-                  <span class="text-sm text-neutral-300">Passengers</span>
+                <div class="flex flex-col items-center p-4 bg-[#0081A7]/5 rounded-lg border border-[#0081A7]/20">
+                  <Users class="w-8 h-8 text-[#0081A7] mb-2" />
+                  <span class="text-2xl font-bold text-[#0081A7]">{{ vehicle.passengers }}</span>
+                  <span class="text-sm text-neutral-600">Passengers</span>
                 </div>
-                <div class="flex flex-col items-center p-4 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 rounded-lg">
-                  <Settings class="w-8 h-8 text-white mb-2" />
-                  <span class="text-sm font-bold text-white text-center">{{ vehicle.transmission }}</span>
-                  <span class="text-sm text-neutral-300">Transmission</span>
+                <div class="flex flex-col items-center p-4 bg-[#0081A7]/5 rounded-lg border border-[#0081A7]/20">
+                  <Settings class="w-8 h-8 text-[#0081A7] mb-2" />
+                  <span class="text-sm font-bold text-[#0081A7] text-center">{{ vehicle.transmission }}</span>
+                  <span class="text-sm text-neutral-600">Transmission</span>
                 </div>
-                <div class="flex flex-col items-center p-4 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 rounded-lg">
-                  <Fuel class="w-8 h-8 text-white mb-2" />
-                  <span class="text-sm font-bold text-white">{{ vehicle.fuel }}</span>
-                  <span class="text-sm text-neutral-300">Fuel Type</span>
+                <div class="flex flex-col items-center p-4 bg-[#0081A7]/5 rounded-lg border border-[#0081A7]/20">
+                  <Fuel class="w-8 h-8 text-[#0081A7] mb-2" />
+                  <span class="text-sm font-bold text-[#0081A7]">{{ vehicle.fuel }}</span>
+                  <span class="text-sm text-neutral-600">Fuel Type</span>
                 </div>
-                <div class="flex flex-col items-center p-4 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 rounded-lg">
-                  <Calendar class="w-8 h-8 text-white mb-2" />
-                  <span class="text-2xl font-bold text-white">{{ vehicle.specifications.year }}</span>
-                  <span class="text-sm text-neutral-300">Year</span>
+                <div class="flex flex-col items-center p-4 bg-[#0081A7]/5 rounded-lg border border-[#0081A7]/20">
+                  <Calendar class="w-8 h-8 text-[#0081A7] mb-2" />
+                  <span class="text-2xl font-bold text-[#0081A7]">{{ vehicle.specifications.year }}</span>
+                  <span class="text-sm text-neutral-600">Year</span>
                 </div>
               </div>
 
-              <div class="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4 pt-6 border-t border-white/20">
+              <div class="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4 pt-6 border-t-2 border-[#0081A7]/20">
                 <div class="flex justify-between">
-                  <span class="text-neutral-300">Make:</span>
-                  <span class="font-semibold text-white">{{ vehicle.specifications.make }}</span>
+                  <span class="text-neutral-600">Make:</span>
+                  <span class="font-semibold text-neutral-900">{{ vehicle.specifications.make }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-neutral-300">Model:</span>
-                  <span class="font-semibold text-white">{{ vehicle.specifications.model }}</span>
+                  <span class="text-neutral-600">Model:</span>
+                  <span class="font-semibold text-neutral-900">{{ vehicle.specifications.model }}</span>
                 </div>
                 <div class="flex justify-between items-center">
-                  <span class="text-neutral-300">Color:</span>
-                  <span class="font-semibold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">{{ vehicle.specifications.color }}</span>
+                  <span class="text-neutral-600">Color:</span>
+                  <span class="font-semibold text-[#0081A7]">{{ vehicle.specifications.color }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-neutral-300">Mileage:</span>
-                  <span class="font-semibold text-white">{{ vehicle.specifications.mileage }}</span>
+                  <span class="text-neutral-600">Mileage:</span>
+                  <span class="font-semibold text-neutral-900">{{ vehicle.specifications.mileage }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-neutral-300">Engine:</span>
-                  <span class="font-semibold text-white">{{ vehicle.specifications.engine }}</span>
+                  <span class="text-neutral-600">Engine:</span>
+                  <span class="font-semibold text-neutral-900">{{ vehicle.specifications.engine }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-neutral-300">Doors:</span>
-                  <span class="font-semibold text-white">{{ vehicle.specifications.doors }}</span>
+                  <span class="text-neutral-600">Doors:</span>
+                  <span class="font-semibold text-neutral-900">{{ vehicle.specifications.doors }}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <!-- Description -->
-          <Card class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
-            <CardHeader>
-              <CardTitle class="text-xl font-['Roboto'] text-white">About This Vehicle</CardTitle>
+          <Card class="border-2 border-[#0081A7] bg-white">
+            <CardHeader class="bg-white border-b border-neutral-200">
+              <CardTitle class="text-xl font-['Roboto'] text-[#0081A7]">About This Vehicle</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p class="text-neutral-300 leading-relaxed">
+            <CardContent class="pt-6">
+              <p class="text-neutral-700 leading-relaxed">
                 {{ vehicle.description }}
               </p>
             </CardContent>
           </Card>
 
           <!-- Features -->
-          <Card class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
-            <CardHeader>
-              <CardTitle class="text-xl font-['Roboto'] text-white">Features & Amenities</CardTitle>
+          <Card class="border-2 border-[#0081A7] bg-white">
+            <CardHeader class="bg-white border-b border-neutral-200">
+              <CardTitle class="text-xl font-['Roboto'] text-[#0081A7]">Features & Amenities</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent class="pt-6">
               <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div
                   v-for="feature in vehicle.features"
                   :key="feature"
-                  class="flex items-center gap-2 p-3 bg-white/10 rounded-lg"
+                  class="flex items-center gap-2 p-3 bg-[#0081A7]/5 rounded-lg border border-[#0081A7]/20"
                 >
-                  <CheckCircle class="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span class="text-sm text-white">{{ feature }}</span>
+                  <CheckCircle class="w-5 h-5 text-[#00AFB9] flex-shrink-0" />
+                  <span class="text-sm text-neutral-900">{{ feature }}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <!-- Insurance -->
-          <Card class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
-            <CardHeader>
+          <Card class="border-2 border-[#0081A7] bg-white">
+            <CardHeader class="bg-white border-b border-neutral-200">
               <div class="flex items-center gap-2">
-                <Shield class="w-6 h-6 text-white" />
-                <CardTitle class="text-xl font-['Roboto'] text-white">Insurance Coverage</CardTitle>
+                <Shield class="w-6 h-6 text-[#0081A7]" />
+                <CardTitle class="text-xl font-['Roboto'] text-[#0081A7]">Insurance Coverage</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent class="pt-6">
               <div class="space-y-2">
                 <div class="flex items-center gap-2">
-                  <CheckCircle class="w-5 h-5 text-green-400" />
-                  <span class="font-semibold text-white">{{ vehicle.insurance.coverage }}</span>
+                  <CheckCircle class="w-5 h-5 text-[#00AFB9]" />
+                  <span class="font-semibold text-neutral-900">{{ vehicle.insurance.coverage }}</span>
                 </div>
-                <p class="text-neutral-300 ml-7">{{ vehicle.insurance.details }}</p>
+                <p class="text-neutral-700 ml-7">{{ vehicle.insurance.details }}</p>
               </div>
             </CardContent>
           </Card>
 
           <!-- Rules -->
-          <Card class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
-            <CardHeader>
-              <CardTitle class="text-xl font-['Roboto'] text-white">Rental Rules & Policies</CardTitle>
+          <Card class="border-2 border-[#0081A7] bg-white">
+            <CardHeader class="bg-white border-b border-neutral-200">
+              <CardTitle class="text-xl font-['Roboto'] text-[#0081A7]">Rental Rules & Policies</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent class="pt-6">
               <ul class="space-y-3">
                 <li
                   v-for="rule in vehicle.rules"
                   :key="rule"
                   class="flex items-start gap-2"
                 >
-                  <AlertCircle class="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                  <span class="text-white">{{ rule }}</span>
+                  <AlertCircle class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <span class="text-neutral-900">{{ rule }}</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
           <!-- Host Information -->
-          <Card class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
-            <CardHeader>
-              <CardTitle class="text-xl font-['Roboto'] text-white">Hosted By</CardTitle>
+          <Card class="border-2 border-[#0081A7] bg-white">
+            <CardHeader class="bg-white border-b border-neutral-200">
+              <CardTitle class="text-xl font-['Roboto'] text-[#0081A7]">Hosted By</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent class="pt-6">
               <div class="flex items-start gap-4">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center text-white text-2xl font-bold">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-[#0081A7] to-[#00AFB9] flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                   {{ vehicle.host.name.charAt(0) }}
                 </div>
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-1">
-                    <h3 class="text-lg font-bold text-white">{{ vehicle.host.name }}</h3>
-                    <Badge v-if="vehicle.host.verified" class="bg-green-500 hover:bg-green-600 border-0">
+                    <h3 class="text-lg font-bold text-neutral-900">{{ vehicle.host.name }}</h3>
+                    <Badge v-if="vehicle.host.verified" class="bg-[#00AFB9] hover:bg-[#00AFB9]/90 border-0">
                       <CheckCircle class="w-3 h-3 mr-1" />
                       Verified
                     </Badge>
                   </div>
                   <div class="flex items-center gap-1 mb-3">
                     <Star class="w-4 h-4 fill-amber-400 text-amber-400" />
-                    <span class="font-semibold text-white">{{ vehicle.host.rating }}</span>
-                    <span class="text-neutral-300 text-sm">Host Rating</span>
+                    <span class="font-semibold text-neutral-900">{{ vehicle.host.rating }}</span>
+                    <span class="text-neutral-600 text-sm">Host Rating</span>
                   </div>
                   <div class="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <div class="font-bold text-white">{{ vehicle.host.totalVehicles }}</div>
-                      <div class="text-neutral-300">Vehicles</div>
+                      <div class="font-bold text-[#0081A7]">{{ vehicle.host.totalVehicles }}</div>
+                      <div class="text-neutral-600">Vehicles</div>
                     </div>
                     <div>
-                      <div class="font-bold text-white">{{ vehicle.host.responseTime }}</div>
-                      <div class="text-neutral-300">Response Time</div>
+                      <div class="font-bold text-[#0081A7]">{{ vehicle.host.responseTime }}</div>
+                      <div class="text-neutral-600">Response Time</div>
                     </div>
                     <div>
-                      <div class="font-bold text-white">{{ vehicle.host.responseRate }}%</div>
-                      <div class="text-neutral-300">Response Rate</div>
+                      <div class="font-bold text-[#0081A7]">{{ vehicle.host.responseRate }}%</div>
+                      <div class="text-neutral-600">Response Rate</div>
                     </div>
                   </div>
                   <button
                     @click="contactHost"
-                    class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/10 border-2 border-white/30 text-white rounded-lg hover:bg-white hover:text-neutral-900 transition-colors font-medium"
+                    class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border-2 border-[#0081A7] text-[#0081A7] rounded-lg hover:bg-[#0081A7] hover:text-white transition-colors font-medium"
                   >
                     <MessageCircle class="w-4 h-4" />
                     Contact Host
@@ -462,12 +499,15 @@ const getCodingDayName = computed(() => {
 
         <!-- Right Column: Booking Card --> 
         <div class="lg:col-span-1">
-          <BookingCard
-            :vehicle-id="vehicle.id"
-            :price="vehicle.price"
-            :booked-dates="vehicle.bookedDates"
-            :coding-days="vehicle.codingDays"
-          />
+          <div class="sticky top-24">
+            <BookingCard
+              :vehicle-id="vehicle.id"
+              :price="vehicle.price"
+              :booked-dates="vehicle.bookedDates"
+              :coding-days="vehicle.codingDays"
+              @booking-attempt="handleBookingAttempt"
+            />
+          </div>
         </div> 
       </div>
     </div>
