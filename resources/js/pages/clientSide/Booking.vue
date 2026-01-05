@@ -233,14 +233,14 @@ const filteredAndSortedVehicles = computed(() => {
 <AppHeader :can-register="canRegister" />
   <div class="min-h-screen bg-neutral-50">
     <!-- Header Section -->
-    <div class="bg-white border-b">
+    <div class="bg-gradient-to-br from-[#0081A7] via-[#00AFB9] to-[#0081A7] border-b border-[#00AFB9]">
       <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-26 pb-12">
         <div class="flex flex-col gap-4">
           <div>
-            <h1 class="text-3xl md:text-4xl font-bold text-neutral-900 mb-2">
+            <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">
               Find Your Perfect Ride
             </h1>
-            <p class="text-neutral-600">
+            <p class="text-white/90">
               Discover {{ vehicles.length }} vehicles available for rent in Metro Manila
             </p>
           </div>

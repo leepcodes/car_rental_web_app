@@ -56,93 +56,93 @@ const handleBooking = () => {
 
 <template>
   <div class="sticky top-24">
-    <Card class="border-2 border-neutral-600 shadow-xl bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 overflow-hidden">
-      <CardHeader class="bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900 text-white">
+    <Card class="border-2 border-[#0081A7] shadow-xl bg-white overflow-hidden">
+      <CardHeader class="bg-white border-b border-neutral-200">
         <div class="flex items-baseline gap-2">
-          <span class="text-4xl font-bold font-['Roboto']">₱{{ price.toLocaleString() }}</span>
-          <span class="text-lg">/day</span>
+          <span class="text-4xl font-bold font-['Roboto'] text-[#0081A7]">₱{{ price.toLocaleString() }}</span>
+          <span class="text-lg text-neutral-600">/day</span>
         </div>
-        <CardDescription class="text-white/90">
+        <CardDescription class="text-neutral-600">
           Best price guarantee
         </CardDescription>
       </CardHeader>
       
-      <CardContent class="pt-6 space-y-4 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
+      <CardContent class="pt-6 space-y-4 bg-white">
         <!-- Pickup Date & Time -->
         <div>
-          <label class="block text-sm font-medium text-white mb-2">
-            <Calendar class="w-4 h-4 inline mr-1 text-white" />
+          <label class="block text-sm font-medium text-[#0081A7] mb-2">
+            <Calendar class="w-4 h-4 inline mr-1 text-[#0081A7]" />
             Pickup Date & Time
           </label>
           <div class="grid grid-cols-2 gap-2">
             <input
               v-model="selectedPickupDate"
               type="date"
-              class="px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-sm text-white"
+              class="px-3 py-2 bg-white border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none text-sm text-neutral-900"
               :min="new Date().toISOString().split('T')[0]"
             />
             <input
               v-model="selectedPickupTime"
               type="time"
-              class="px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-sm text-white"
+              class="px-3 py-2 bg-white border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none text-sm text-neutral-900"
             />
           </div>
         </div>
 
         <!-- Return Date & Time -->
         <div>
-          <label class="block text-sm font-medium text-white mb-2">
-            <Calendar class="w-4 h-4 inline mr-1 text-white" />
+          <label class="block text-sm font-medium text-[#0081A7] mb-2">
+            <Calendar class="w-4 h-4 inline mr-1 text-[#0081A7]" />
             Return Date & Time
           </label>
           <div class="grid grid-cols-2 gap-2">
             <input
               v-model="selectedReturnDate"
               type="date"
-              class="px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-sm text-white"
+              class="px-3 py-2 bg-white border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none text-sm text-neutral-900"
               :min="selectedPickupDate || new Date().toISOString().split('T')[0]"
             />
             <input
               v-model="selectedReturnTime"
               type="time"
-              class="px-3 py-2 bg-neutral-800 border border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-sm text-white"
+              class="px-3 py-2 bg-white border border-[#0081A7]/30 rounded-lg focus:ring-2 focus:ring-[#0081A7] focus:border-[#0081A7] outline-none text-sm text-neutral-900"
             />
           </div>
         </div>
 
         <!-- Price Breakdown -->
-        <div v-if="totalDays > 0" class="pt-4 border-t border-white/20 space-y-2">
+        <div v-if="totalDays > 0" class="pt-4 border-t border-neutral-200 space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-white/80">₱{{ price.toLocaleString() }} × {{ totalDays }} day{{ totalDays > 1 ? 's' : '' }}</span>
-            <span class="font-semibold text-white">₱{{ totalPrice.toLocaleString() }}</span>
+            <span class="text-neutral-600">₱{{ price.toLocaleString() }} × {{ totalDays }} day{{ totalDays > 1 ? 's' : '' }}</span>
+            <span class="font-semibold text-neutral-900">₱{{ totalPrice.toLocaleString() }}</span>
           </div>
           <div class="flex justify-between text-sm">
-            <span class="text-white/80">Service fee</span>
-            <span class="font-semibold text-white">₱{{ serviceFee.toLocaleString() }}</span>
+            <span class="text-neutral-600">Service fee</span>
+            <span class="font-semibold text-neutral-900">₱{{ serviceFee.toLocaleString() }}</span>
           </div>
-          <div class="flex justify-between pt-2 border-t border-white/20 font-bold text-lg">
-            <span class="text-white">Total</span>
-            <span class="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">₱{{ grandTotal.toLocaleString() }}</span>
+          <div class="flex justify-between pt-2 border-t border-neutral-200 font-bold text-lg">
+            <span class="text-neutral-900">Total</span>
+            <span class="text-[#0081A7]">₱{{ grandTotal.toLocaleString() }}</span>
           </div>
         </div>
       </CardContent>
       
-      <CardFooter class="flex flex-col gap-2 bg-gradient-to-br from-neutral-600 via-neutral-700 to-neutral-900">
+      <CardFooter class="flex flex-col gap-2 bg-white border-t border-neutral-200">
         <button
           @click="handleBooking"
           :disabled="!available"
-          class="w-full py-3 bg-gradient-to-r from-blue-400 to-cyan-400 text-white rounded-lg font-bold text-lg hover:shadow-xl hover:from-blue-500 hover:to-cyan-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto']"
+          class="w-full py-3 bg-gradient-to-r from-[#0081A7] to-[#00AFB9] text-white rounded-lg font-bold text-lg hover:shadow-xl hover:from-[#0081A7]/90 hover:to-[#00AFB9]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-['Roboto']"
         >
           {{ available ? 'Book Now' : 'Not Available' }}
         </button>
-        <p class="text-xs text-center text-white/70">
+        <p class="text-xs text-center text-neutral-600">
           You won't be charged yet
         </p>
       </CardFooter>
     </Card>
 
     <!-- Quick Info -->
-    <Card class="mt-4 bg-neutral-50">
+    <Card class="mt-4 bg-white border-2 border-[#0081A7]/30">
       <CardContent class="pt-6">
         <div class="space-y-3 text-sm">
           <div class="flex items-center gap-2 text-neutral-700">
@@ -168,10 +168,9 @@ const handleBooking = () => {
   font-family: 'Roboto', sans-serif;
 }
 
-/* Style date and time input calendar icons to white */
+/* Style date and time input calendar icons */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(100%) brightness(100%);
   cursor: pointer;
   opacity: 1 !important;
   width: 20px;
@@ -180,13 +179,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="time"]::-webkit-calendar-picker-indicator:hover {
-  filter: invert(100%) brightness(120%);
-}
-
-/* For Firefox */
-input[type="date"],
-input[type="time"] {
-  color-scheme: dark;
+  opacity: 0.8;
 }
 
 /* Ensure icons are visible on webkit browsers */

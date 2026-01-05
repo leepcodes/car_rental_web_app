@@ -111,7 +111,7 @@ const dashboardLabel = computed(() => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <span class="text-xl font-bold text-gray-900">CRR Rentals</span>
+          <span class="text-xl font-bold text-gray-900">Uniride</span>
         </Link>
 
         <!-- Desktop Navigation -->
