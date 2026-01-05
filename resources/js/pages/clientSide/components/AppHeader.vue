@@ -22,7 +22,7 @@ defineProps<{
 const mobileMenuOpen = ref(false);
 const page = usePage();
 
-const user = computed(() => page.props.auth.user as any);
+const user = computed(() => page.props.auth?.user as any);
 
 const userInitials = computed(() => {
   if (!user.value?.name) return 'U';
@@ -46,17 +46,31 @@ const isOperator = computed(() => {
   return user.value?.user_type === 'operator';
 });
 
+const isGuest = computed(() => {
+  return !user.value;
+});
+
+// Booking link based on user type
+const bookingLink = computed(() => {
+  if (isClient.value) {
+    return '/client/booking';
+  } else if (isGuest.value) {
+    return '/vehicles'; // Guest route
+  }
+  return '/vehicles';
+});
+
 // Navigation links - filtered based on user type
 const navLinks = computed(() => {
   const baseLinks = [
-    { href: '/booking', label: 'Book' },
+    { href: bookingLink.value, label: 'Book' },
     { href: '/about', label: 'About' },
     { href: '/contact', label: 'Contact' },
   ];
 
   // If user is an operator, remove the "Book" link
   if (isOperator.value) {
-    return baseLinks.filter(link => link.href !== '/booking');
+    return baseLinks.filter(link => link.label !== 'Book');
   }
 
   return baseLinks;
@@ -64,7 +78,7 @@ const navLinks = computed(() => {
 
 // Show "Apply as Operator" button only for guests (not logged in)
 const showApplyAsOperator = computed(() => {
-  return !user.value; // Only show if user is not logged in
+  return isGuest.value;
 });
 
 // Dashboard link based on user type
@@ -72,9 +86,9 @@ const dashboardLink = computed(() => {
   const userType = user.value?.user_type;
   
   if (userType === 'client') {
-    return '/client/booking';
+    return '/client/booking'; // Client bookings page
   } else if (userType === 'operator') {
-    return '/operator/dashboard';
+    return '/operator/dashboard'; // Operator dashboard
   }
   
   return '/';
@@ -89,7 +103,18 @@ const dashboardLabel = computed(() => {
   }
   return 'Dashboard';
 });
+
+// Profile link based on user type
+const profileLink = computed(() => {
+  if (isClient.value) {
+    return '/client/profile';
+  } else if (isOperator.value) {
+    return '/operator/profile';
+  }
+  return '/profile';
+});
 </script>
+
 
 <template>
   <header class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -102,7 +127,7 @@ const dashboardLabel = computed(() => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <span class="text-xl font-bold text-gray-900">CRR Rentals</span>
+          <span class="text-xl font-bold text-gray-900">Uniride</span>
         </Link>
 
         <!-- Desktop Navigation -->
@@ -162,7 +187,7 @@ const dashboardLabel = computed(() => {
                 
                 <!-- Profile Link -->
                 <DropdownMenuItem as-child>
-                  <Link :href="isClient ? '/client/profile' : '/operator/profile'" class="cursor-pointer">
+                  <Link :href="profileLink" class="cursor-pointer">
                     <User class="mr-2 h-4 w-4" />
                     <span>My Profile</span>
                   </Link>
@@ -262,7 +287,7 @@ const dashboardLabel = computed(() => {
 
               <!-- Profile Link -->
               <Link 
-                :href="isClient ? '/client/profile' : '/operator/profile'" 
+                :href="profileLink" 
                 class="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors flex items-center gap-2"
                 @click="mobileMenuOpen = false"
               >

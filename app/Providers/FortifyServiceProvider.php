@@ -28,19 +28,14 @@ class FortifyServiceProvider extends ServiceProvider
             {
                 $user = auth()->user();
                 
-                // Check if profile is NOT completed (only for client and operator)
-                if (!$user->profile_completed && in_array($user->user_type, ['client', 'operator'])) {
-                    return redirect()->route($user->user_type . '.profile.complete');
-                }
-                
-                // Redirect based on user type
+                // Redirect based on user type - middleware will handle profile completion
                 switch ($user->user_type) {
                     case 'client':
-                        return redirect()->route('booking');
+                        return redirect()->route('client.booking');
                     case 'operator':
-                        return redirect()->route('operator.dashboard');
+                        return redirect()->route('operator.vehicles.list');
                     case 'admin':
-                        return redirect()->route('admin.dashboard');
+                        return redirect()->route('dashboard');
                     default:
                         // This should never happen if user_type is properly set
                         abort(403, 'Invalid user type');
@@ -54,13 +49,17 @@ class FortifyServiceProvider extends ServiceProvider
             {
                 $user = auth()->user();
                 
-                // Always redirect to profile completion after registration
-                if ($user->user_type) {
-                    return redirect()->route($user->user_type . '.profile.complete');
+                // Redirect to main dashboard - middleware will handle profile completion
+                switch ($user->user_type) {
+                    case 'client':
+                        return redirect()->route('client.booking');
+                    case 'operator':
+                        return redirect()->route('operator.vehicles.list');
+                    case 'admin':
+                        return redirect()->route('dashboard');
+                    default:
+                        abort(403, 'Invalid user type');
                 }
-                
-                // Fallback
-                return redirect()->route('profile.complete');
             }
         });
     }

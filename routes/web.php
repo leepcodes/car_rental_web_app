@@ -1,10 +1,13 @@
 <?php
 
+use App\Http\Controllers\Client\ListingController;
+use App\Http\Controllers\Client\PaymentController;
+use App\Http\Controllers\Operator\VehicleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
-use App\Http\Controllers\ClientProfileController;
-use App\Http\Controllers\OperatorProfileController;
+use App\Http\Controllers\Client\ClientProfileController;
+use App\Http\Controllers\Operator\OperatorProfileController;
 use App\Http\Controllers\VerificationController;
 
 // Public routes
@@ -37,46 +40,51 @@ Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// ✅ Guest/Public routes (no authentication required)
+Route::get('/vehicles', [ListingController::class, 'guestIndex'])->name('vehicles.index');
+Route::get('/vehicles/{id}', [ListingController::class, 'guestShow'])->name('vehicles.show');
+
 // ✅ Client routes
 Route::middleware(['auth', 'role:client'])->group(function () {
-    Route::get('/client/profile/complete', function () {
-        return Inertia::render('clientSide/clientsView/profileCompletion/profileCompletion');
-    })->name('client.profile.complete');
-    
-    Route::post('/client/profile/complete', [ClientProfileController::class, 'store'])
-        ->name('client.profile.complete.store');
+        
+    Route::get('/client/profile/complete', [ClientProfileController::class, 'create'])->name('client.profile.complete');
+    Route::post('/client/profile/complete', [ClientProfileController::class, 'store'])->name('client.profile.complete.store');
 
-    Route::middleware(['profile.complete', 'verified.user'])->group(function () {
-        Route::get('/client/booking', function () {
-            return Inertia::render('clientSide/clientsView/Booking/Listing');
-        })->name('client.booking');
-        
-        Route::get('/client/booking/form', function () {
-            return Inertia::render('clientSide/clientsView/Booking/Form');
-        })->name('client.booking.form');
-        
-        Route::get('/client/booking/{id}', function ($id) {
-            return Inertia::render('clientSide/clientsView/IndivList/IndivList', [
-                'vehicleId' => $id
-            ]);
-        })->name('client.booking.show');
+    // Protected client booking routes
+    Route::middleware(['profile.complete','verified.user'])->group(function () {
+        Route::get('/client/booking', [ListingController::class, 'index'])->name('client.booking');
+        Route::get('/client/booking/{id}', [ListingController::class, 'show'])->name('client.booking.show');
+
+        Route::middleware(['permission:process payments'])->group(function () {
+            Route::get('/client/booking/{id}/form', [PaymentController::class, 'showPaymentForm'])->name('client.booking.form');
+            Route::post('/client/booking/{id}/form', [PaymentController::class, 'processPayment'])->name('client.booking.form.process');
+            Route::get('/payment/gateway/{booking}', [PaymentController::class, 'showPaymentGateway'])->name('payment.gateway');
+            Route::post('/payment/complete/{booking}', [PaymentController::class, 'completePayment'])->name('payment.complete');
+            Route::get('/payment/confirmation/{booking}', [PaymentController::class, 'showConfirmation'])->name('payment.confirmation');
+            Route::post('/receipt/{booking}/send', [PaymentController::class, 'sendReceipt'])->name('receipt.send');
+        });
     });
 }); 
 
 // ✅ Operator routes
 Route::middleware(['auth', 'role:operator'])->group(function () {
-    Route::get('/operator/profile/complete', function () {
-        return Inertia::render('clientSide/operatorsView/operatorsProfileCompletion/operatorsProfileCompletion');
-    })->name('operator.profile.complete');
-
-    Route::post('/operator/profile/complete', [OperatorProfileController::class, 'store'])
-        ->name('operator.profile.complete.store');
+    Route::get('/operator/profile/complete', [OperatorProfileController::class, 'create'])->name('operator.profile.complete');
+    Route::post('/operator/profile/complete', [OperatorProfileController::class, 'store'])->name('operator.profile.complete.store');
     
-    Route::middleware(['profile.complete'])->group(function () {
-        Route::get('/operator/dashboard', function () {
-            return Inertia::render('clientSide/operatorsView/Dashboard');
-        })->name('operator.dashboard');
-    });
+    // Protected operator dashboard route
+    Route::middleware(['profile.complete','verified.user'])->group(function () {
+
+        // Vehicle management routes
+        Route::middleware(['permission:manage own vehicles'])->prefix('operator/vehicles')->name('operator.vehicles.')->controller(VehicleController::class)->group(function () {
+            Route::get('/', 'operatorIndex')->name('list');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{id}', 'show')->name('show');
+            Route::get('/{id}/edit', 'edit')->name('edit');
+            Route::put('/{id}', 'update')->name('update');
+            Route::delete('/{id}', 'destroy')->name('destroy');
+        });
+     });
 });
 // Test API routes directly in web.php
 Route::prefix('api')->middleware(['auth:sanctum'])->group(function () {
