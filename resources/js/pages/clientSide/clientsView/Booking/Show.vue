@@ -23,6 +23,13 @@ import { Button } from '@/components/ui/button/index';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
+interface BookedDate {
+  id: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
+
 interface Host {
   name: string;
   verified: boolean;
@@ -50,6 +57,13 @@ interface Insurance {
   details: string;
 }
 
+interface Document {
+  id: number;
+  type: string;
+  url: string;
+  full_url: string;
+}
+
 interface Vehicle {
   id: number;
   name: string;
@@ -63,13 +77,15 @@ interface Vehicle {
   rating: number;
   reviews: number;
   host: Host;
-  available: boolean;
+  bookedDates: BookedDate[];
+  codingDays?: number[];
   featured: boolean;
   description: string;
   features: string[];
   specifications: Specifications;
   rules: string[];
   insurance: Insurance;
+  documents?: Document[];
 }
 
 interface Props {
@@ -423,7 +439,8 @@ const shareVehicle = () => {
             <BookingCard
               :vehicle-id="vehicle.id"
               :price="vehicle.price"
-              :available="!!vehicle.available"
+              :booked-dates="vehicle.bookedDates"
+              :coding-days="vehicle.codingDays"
             />
           </div>
       </div>
