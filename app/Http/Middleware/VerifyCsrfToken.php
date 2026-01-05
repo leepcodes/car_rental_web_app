@@ -15,3 +15,4 @@ class VerifyCsrfToken extends Middleware
         'api/*',  // ✅ Disable CSRF for OTP API routes
     ];
 }
+    

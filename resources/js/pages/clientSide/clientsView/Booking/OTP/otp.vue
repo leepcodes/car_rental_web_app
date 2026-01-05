@@ -287,10 +287,6 @@ const resendOtp = async () => {
   }
 };
 
-// Go back to listings
-const goBack = () => {
-  router.visit('/client/booking');
-};
 
 // Cleanup on unmount
 const cleanup = () => {
@@ -319,15 +315,6 @@ onUnmounted(() => {
     </div>
 
     <div class="w-full max-w-md relative z-10">
-      <!-- Back Button -->
-      <button
-        @click="goBack"
-        class="flex items-center gap-2 text-white hover:text-white/80 transition-colors group mb-6 backdrop-blur-sm bg-white/10 px-4 py-2 rounded-lg"
-      >
-        <ArrowLeft class="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-        <span class="font-medium">Back to Listings</span>
-      </button>
-
       <!-- OTP Card -->
       <Card class="border-0 shadow-2xl overflow-hidden backdrop-blur-sm bg-white/95">
         <!-- Header -->
@@ -483,4 +470,4 @@ input[type="text"]::-webkit-inner-spin-button {
 input[type="text"] {
   -moz-appearance: textfield;
 }
-</style>
+</style> 
